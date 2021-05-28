@@ -1,105 +1,82 @@
 {
-  "name": "linenote",
-  "displayName": "Line Note",
-  "description": "Add notes to the line of source code",
-  "version": "1.2.1",
-  "publisher": "tkrkt",
-  "engines": {
-    "vscode": "^1.30.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "license": "MIT",
-  "icon": "images/icon.png",
-  "activationEvents": [
-    "*"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/tkrkt/linenote.git"
-  },
-  "keywords": [
-    "vscode",
-    "note",
-    "comment",
-    "line",
-    "tooltip"
-  ],
-  "main": "./out/extension.js",
-  "contributes": {
-    "commands": [{
-      "command": "linenote.addNote",
-      "title": "%command.addNote.title%"
-    }, {
-      "command": "linenote.openNote",
-      "title": "%command.openNote.title%"
-    }, {
-      "command": "linenote.removeNote",
-      "title": "%command.removeNote.title%"
-    }],
-    "menus": {
-      "editor/context": [{
-        "command": "linenote.addNote"
-      }]
-    },
-    "configuration": {
-      "type": "object",
-      "title": "Line Note",
-      "properties": {
-        "linenote.lineColor": {
-          "type": "string",
-          "default": "rgba(255, 255, 0, 0.05)",
-          "description": "%configuration.lineColor.description%"
-        },
-        "linenote.rulerColor": {
-          "type": "string",
-          "default": "rgba(255, 255, 0, 0.4)",
-          "description": "%configuration.rulerColor.description%"
-        },
-        "linenote.automaticallyDelete": {
-          "type": "boolean",
-          "default": true,
-          "description": "%configuration.automaticallyDelete.description%"
-        },
-        "linenote.automaticallyDeleteInterval": {
-          "type": "integer",
-          "default": 60000,
-          "description": "%configuration.automaticallyDeleteInterval.description%"
-        },
-        "linenote.showGutterIcon": {
-          "type": "boolean",
-          "default": true,
-          "description": "%configuration.showGutterIcon.description%"
-        },
-        "linenote.gutterIconPath": {
-          "type": ["string", "null"],
-          "default": null,
-          "description": "%configuration.gutterIconPath.description%"
-        }
-      }
-    }
-  },
-  "scripts": {
-    "vscode:prepublish": "yarn run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "yarn run compile && node ./node_modules/vscode/bin/test"
-  },
-  "devDependencies": {
-    "@types/chokidar": "^1.7.5",
-    "@types/lodash.debounce": "^4.0.4",
-    "@types/mocha": "^2.2.42",
-    "@types/node": "^8.10.25",
-    "tslint": "^5.8.0",
-    "typescript": "^3.1.4",
-    "vscode": "^1.1.25"
-  },
-  "dependencies": {
-    "@types/fs-extra": "^5.0.4",
-    "chokidar": "^2.0.4",
-    "fs-extra": "^7.0.1",
-    "lodash.debounce": "^4.0.8"
-  }
+	"name": "linenote-codelens",
+	"repository": "https://github.com/jimmygc/linenote-codelens.git",
+	"displayName": "Note Line in Codelens",
+	"description": "note line in codelens",
+	"version": "0.0.2",
+	"publisher": "ms-vscode",
+	"engines": {
+		"vscode": "^1.26.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"*"
+	],
+	"main": "./out/extension",
+	"contributes": {
+		"commands": [
+			{
+				"command": "linenotecodelens.openNote",
+				"title": "LineNote: Open note"
+			},
+			{
+				"command": "linenotecodelens.removeNote",
+				"title": "LineNote: Delete note"
+			},
+			{
+				"command": "linenotecodelens.moveNote",
+				"title": "LineNote: Move note to"
+			},
+			{
+				"command": "linenotecodelens.moveDownNote",
+				"title": "LineNote: Move note down"
+			}
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"command": "linenotecodelens.openNote",
+					"group": "linenote@1"
+				},
+				{
+					"command": "linenotecodelens.removeNote",
+					"group": "linenote@2"
+				},
+				{
+					"command": "linenotecodelens.moveNote",
+					"group": "linenote@4"
+				},
+				{
+					"command": "linenotecodelens.moveDownNote",
+					"group": "linenote@3"
+				}
+			]
+		},
+		"configuration": {
+			"properties": {}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint . --ext .ts,.tsx",
+		"watch": "tsc -watch -p ./"
+	},
+	"devDependencies": {
+		"@types/mocha": "^2.2.42",
+		"@types/node": "^12.12.0",
+		"@types/vscode": "^1.26.0",
+		"@typescript-eslint/eslint-plugin": "^4.16.0",
+		"@typescript-eslint/parser": "^4.16.0",
+		"eslint": "^7.21.0",
+		"tslint": "^5.8.0",
+		"typescript": "^4.2.2",
+		"vscode": "^0.9.9"
+	},
+	"dependencies": {
+		"sqlite": "^4.0.23",
+		"sqlite3": "^5.0.2"
+	}
 }
