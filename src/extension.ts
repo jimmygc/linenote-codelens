@@ -119,7 +119,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 		if(res)
 		{
 			// console.debug(res.note_content);
-			await this.db.run("INSERT OR REPLACE INTO linenote_notes VALUES (?,?)", to_path, to_lineno, res.note_content)
+			await this.db.run("INSERT OR REPLACE INTO linenote_notes VALUES (?,?,?)", to_path, to_lineno, res.note_content)
 			await this.db.run("DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?", from_path, from_lineno)
 		}
 	}
