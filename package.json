@@ -4,7 +4,7 @@
 	"displayName": "Note Line in Codelens",
 	"description": "note line in codelens",
 	"version": "0.0.2",
-	"publisher": "ms-vscode",
+	"publisher": "jimmygc",
 	"engines": {
 		"vscode": "^1.26.0"
 	},
