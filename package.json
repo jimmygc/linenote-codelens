@@ -3,7 +3,7 @@
 	"repository": "https://github.com/jimmygc/linenote-codelens.git",
 	"displayName": "Note Line in Codelens",
 	"description": "note line in codelens",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"publisher": "jimmygc",
 	"engines": {
 		"vscode": "^1.26.0"
@@ -26,12 +26,12 @@
 				"title": "LineNote: Delete note"
 			},
 			{
-				"command": "linenotecodelens.moveNote",
-				"title": "LineNote: Move note to"
+				"command": "linenotecodelens.moveSingleNote",
+				"title": "LineNote: Move single note"
 			},
 			{
-				"command": "linenotecodelens.moveDownNote",
-				"title": "LineNote: Move note down"
+				"command": "linenotecodelens.moveNoteAndSubsequential",
+				"title": "LineNote: Move all notes under"
 			}
 		],
 		"menus": {
@@ -45,11 +45,11 @@
 					"group": "linenote@2"
 				},
 				{
-					"command": "linenotecodelens.moveNote",
+					"command": "linenotecodelens.moveSingleNote",
 					"group": "linenote@4"
 				},
 				{
-					"command": "linenotecodelens.moveDownNote",
+					"command": "linenotecodelens.moveNoteAndSubsequential",
 					"group": "linenote@3"
 				}
 			]

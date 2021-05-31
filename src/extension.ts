@@ -81,7 +81,8 @@ export const activate = (context: vscode.ExtensionContext) => {
 		let [rootPath, fsPath, line_no] = this.uri2path_lineno(uri);
 		await this.init(rootPath);
 		console.debug("readFile: " + fsPath);
-		const res = await this.db.get("SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?", fsPath, line_no)
+		const res = await this.db.get(
+            "SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?", fsPath, line_no)
 		if(res)
 		{
 			// console.debug(res.note_content);
@@ -100,7 +101,8 @@ export const activate = (context: vscode.ExtensionContext) => {
 		let [rootPath, fsPath, line_no] = this.uri2path_lineno(uri);
 		await this.init(rootPath);
 		console.debug("writing file " + uri+ " :" + content.toString());
-		await this.db.run("INSERT OR REPLACE INTO linenote_notes VALUES (?,?,?)",fsPath, line_no, content.toString())
+		await this.db.run(
+            "INSERT OR REPLACE INTO linenote_notes VALUES (?,?,?)",fsPath, line_no, content.toString())
 	}
 	createDirectory(uri: vscode.Uri): void {}
 	readDirectory(uri: vscode.Uri): [string, vscode.FileType][] { return [] }
@@ -108,19 +110,23 @@ export const activate = (context: vscode.ExtensionContext) => {
 		let [rootPath, fsPath, line_no] = this.uri2path_lineno(uri);
 		await this.init(rootPath);
 		console.debug("deleting file " + fsPath);
-		await this.db.run("DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?", fsPath, line_no)
+		await this.db.run(
+            "DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?", fsPath, line_no)
 	}
 	async rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): Promise<void> {
 		let [root_path, from_path, from_lineno] = this.uri2path_lineno(oldUri);
 		let [_, to_path, to_lineno] = this.uri2path_lineno(newUri);
 		await this.init(root_path);
 		console.debug(`rename file: ${from_path}:${from_lineno} to ${to_path}:${to_lineno}`);
-		const res = await this.db.get("SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?", from_path, from_lineno)
+		const res = await this.db.get(
+            "SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?", from_path, from_lineno)
 		if(res)
 		{
 			// console.debug(res.note_content);
-			await this.db.run("INSERT OR REPLACE INTO linenote_notes VALUES (?,?,?)", to_path, to_lineno, res.note_content)
-			await this.db.run("DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?", from_path, from_lineno)
+			await this.db.run(
+                "INSERT OR REPLACE INTO linenote_notes VALUES (?,?,?)", to_path, to_lineno, res.note_content)
+			await this.db.run(
+                "DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?", from_path, from_lineno)
 		}
 	}
   }
@@ -146,7 +152,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 		if(!fs.existsSync(fullPath)) {
 			console.debug(`auto deleted fullPath = ${fullPath}`);
 			db.run("DELETE FROM linenote_notes WHERE fspath = ?", row.fspath)
-			vscode.window.showInformationMessage(`Auto removed comments of ${row.fspath}.`)
+			vscode.window.showInformationMessage(`Auto removed notes of ${row.fspath}.`)
 			codelensProvider._onDidChangeCodeLenses.fire();
 		}
 	}
@@ -208,43 +214,50 @@ export const activate = (context: vscode.ExtensionContext) => {
 			if(!note_content.toString()) {
 				return;
 			}
-			let selection = await vscode.window.showInformationMessage(`Delete comment on line ${from}?`, `Yes`, `No`);
+			let selection = await vscode.window.showInformationMessage(
+                `Delete note on line ${from}?`, `Yes`, `No`);
 			if(selection.toLowerCase() != "yes")
 			{
 				return
 			}
 			await vscode.workspace.fs.delete(vscode.Uri.parse(url), {useTrash: false});
 			codelensProvider._onDidChangeCodeLenses.fire();
-			vscode.window.showInformationMessage(`Successfully remove comment from line ${from}.`)
+			vscode.window.showInformationMessage(`Successfully remove note from line ${from}.`)
 		}
     }),
 
-	vscode.commands.registerCommand("linenotecodelens.moveDownNote", async () => {
+	vscode.commands.registerCommand("linenotecodelens.moveNoteAndSubsequential", async () => {
 		const editor = vscode.window.activeTextEditor;
 		if(!editor)
 		{
 			return;
 		}
 
-		let line_number = await vscode.window.showInputBox({prompt: "Move down lines?" });
-		let line_no = parseInt(line_number)
-		if (isNaN(line_no))
-		{
-			return;
-		}
-
 		const fsPath = editor.document.uri.fsPath;
-		const [from, _] = getSelectionLineRange(editor);
-		let to = from + line_no;
-		if(to > editor.document.lineCount || to < 0)
+        const [from, _] = getSelectionLineRange(editor);
+        let selection = await vscode.window.showInformationMessage(
+            `Move all notes: Select target line and hit OK?`, `OK`, `Cancel`);
+        if(selection.toLowerCase() != "ok")
+        {
+            return
+        }
+        const [to, __] = getSelectionLineRange(editor);
+		if(to > editor.document.lineCount || to < 0 || from == to)
 		{
 			return;
 		}
-
+        const line_no = to - from;
+        selection = await vscode.window.showInformationMessage(
+            `Move note on line ${from} and the following lines to line ${to}?`, `Yes`, `No`);
+        if(selection.toLowerCase() != "yes")
+        {
+            return
+        }
 		let rootPath = getProjectRoot(fsPath)
 		let db = await getDB(rootPath);
 		let relativePath = path.relative(rootPath, fsPath);
-		let results = await db.all("SELECT * FROM linenote_notes WHERE fspath = ? and line_no >= ?", relativePath, from);
+		let results = await db.all(
+            "SELECT * FROM linenote_notes WHERE fspath = ? and line_no >= ?", relativePath, from);
 		for(let row of results) {
 			let from = row.line_no;
 			let to  = row.line_no + line_no;
@@ -259,32 +272,33 @@ export const activate = (context: vscode.ExtensionContext) => {
 			await vscode.workspace.fs.delete(vscode.Uri.parse(from_url));
 		}
 		codelensProvider._onDidChangeCodeLenses.fire();
-		vscode.window.showInformationMessage(`Successfully move comment down ${line_no} lines from line ${from}.`)
+		vscode.window.showInformationMessage(
+            `Successfully move all notes ${line_no>0?"down":"up"} ${Math.abs(line_no)} lines from line ${from}.`)
 	}),
 
-    vscode.commands.registerCommand("linenotecodelens.moveNote", async () => {
+    vscode.commands.registerCommand("linenotecodelens.moveSingleNote", async () => {
 		const editor = vscode.window.activeTextEditor;
 		if(!editor)
 		{
 			return
 		}
+        const [from, _] = getSelectionLineRange(editor);
 
-		let line_number = await vscode.window.showInputBox({prompt: "line number to move to" });
-		let line_no = parseInt(line_number)
-		if (isNaN(line_no))
+        let selection = await vscode.window.showInformationMessage(
+            `Move single note: Select target line and hit OK?`, `OK`, `Cancel`);
+        if(selection.toLowerCase() != "ok")
+        {
+            return
+        }
+        const [to, __] = getSelectionLineRange(editor);
+		if(to > editor.document.lineCount || to < 0 || from == to)
 		{
-			return
-		}
-
-		if(line_no > editor.document.lineCount || line_no < 0)
-		{
-			return
+			return;
 		}
 
 		const fsPath = editor.document.uri.fsPath;
-		const [from, _] = getSelectionLineRange(editor);
 		var from_url = linenoteScheme + ':' + fsPath + "_L" + from;
-		var to_url = linenoteScheme + ':' + fsPath + "_L" + line_no;
+		var to_url = linenoteScheme + ':' + fsPath + "_L" + to;
 		let source_content = await vscode.workspace.fs.readFile(vscode.Uri.parse(from_url));
 		if(!source_content.toString())
 		{
@@ -293,7 +307,8 @@ export const activate = (context: vscode.ExtensionContext) => {
 		let target_content = await vscode.workspace.fs.readFile(vscode.Uri.parse(to_url));
 		if(target_content.toString())
 		{
-			let selection = await vscode.window.showInformationMessage(`Overwrite comment on line ${line_no}?`, `Yes`, `No`);
+			let selection = await vscode.window.showInformationMessage(
+                `Overwrite note on line ${to}?`, `Yes`, `No`);
 			if(selection.toLowerCase() != "yes")
 			{
 				return
@@ -303,7 +318,8 @@ export const activate = (context: vscode.ExtensionContext) => {
 		await vscode.workspace.fs.writeFile(vscode.Uri.parse(to_url), source_content);
 		await vscode.workspace.fs.delete(vscode.Uri.parse(from_url));
 		codelensProvider._onDidChangeCodeLenses.fire();
-		vscode.window.showInformationMessage(`Successfully move comment from line ${from} to line ${line_no}.`)
+		vscode.window.showInformationMessage(
+            `Successfully move single note from line ${from} to line ${to}.`)
     })
   );
 };
