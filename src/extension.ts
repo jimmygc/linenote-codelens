@@ -156,6 +156,16 @@ export const activate = (context: vscode.ExtensionContext) => {
 			codelensProvider._onDidChangeCodeLenses.fire();
 		}
 	}
+    results = await db.all("SELECT * FROM linenote_notes");
+    for(let row of results) {
+        if(!row.note_content.toString().trim())
+        {
+            db.run(
+                "DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?", row.fspath, row.line_no);
+            vscode.window.showInformationMessage(`Auto removed empty note of ${row.fspath}:${row.line_no}.`)
+            codelensProvider._onDidChangeCodeLenses.fire();
+        }
+    }
   }
 
   // watch notes that are not corresponding files
