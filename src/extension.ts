@@ -258,6 +258,26 @@ export const activate = (context: vscode.ExtensionContext) => {
 		let relativePath = path.relative(rootPath, fsPath);
 		let results = await db.all(
             "SELECT * FROM linenote_notes WHERE fspath = ? and line_no >= ?", relativePath, from);
+        if (to < from) {
+            let check_results = await db.all(
+                "SELECT * FROM linenote_notes WHERE fspath = ? and line_no < ?", relativePath, from);
+            for(let row of results) {
+                let check_to  = row.line_no + line_no;
+                for(let check_row of check_results)
+                {
+                    console.info(`${check_row.line_no} = ${check_row.note_content}`);
+                    if (check_row.line_no == check_to && check_row.note_content.toString().trim())
+                    {
+                        let selection = await vscode.window.showInformationMessage(
+                            `Overwrite note on line ${check_to}?`, `Yes`, `No`);
+                        if(selection.toLowerCase() != "yes")
+                        {
+                            return
+                        }
+                    }
+                }
+            }
+        }
 		for(let row of results) {
 			let from = row.line_no;
 			let to  = row.line_no + line_no;
