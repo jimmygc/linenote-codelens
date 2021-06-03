@@ -35,7 +35,9 @@ export const activate = (context: vscode.ExtensionContext) => {
   vscode.languages.registerCodeLensProvider("*", codelensProvider);
 
   const treeViewProvider = new NoteTreeProvider();
-  let treeview = vscode.window.createTreeView('LinenoteExplorer', { treeDataProvider: treeViewProvider });
+  let treeview = vscode.window.createTreeView(
+      'LinenoteExplorer', 
+      { treeDataProvider: treeViewProvider, showCollapseAll: true});
 
   const linenoteScheme = 'linenote';
 
