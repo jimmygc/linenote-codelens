@@ -29,27 +29,27 @@
 		"commands": [
 			{
 				"command": "linenotecodelens.openNote",
-				"title": "LineNote: Open note",
+				"title": "Line Note: Open note",
                 "icon": "$(edit)"
 			},
 			{
 				"command": "linenotecodelens.removeNote",
-				"title": "LineNote: Delete note",
+				"title": "Line Note: Delete note",
                 "icon": "$(close)"
 			},
 			{
 				"command": "linenotecodelens.moveSingleNote",
-				"title": "LineNote: Move single note",
+				"title": "Line Note: Move single note",
                 "icon": "$(gear)"
 			},
 			{
 				"command": "linenotecodelens.moveNoteAndSubsequential",
-				"title": "LineNote: Move all notes under",
+				"title": "Line Note: Move all notes under",
                 "icon": "$(arrow-down)"
 			},
 			{
 				"command": "linenotecodelens.treeview_refresh",
-				"title": "Refresh",
+				"title": "Line Note: Refresh",
 				"icon": "$(refresh)"
 			}
 		],
@@ -83,18 +83,24 @@
                     "group": "inline@1"
                 }
             ],
-			"editor/context": [
+            "editor/context" : [
 				{
 					"command": "linenotecodelens.openNote",
 					"group": "linenote@1"
 				},
+                {
+                    "submenu": "linenote.editor.context",
+                    "group": "linenote@2"
+                }
+            ],
+			"linenote.editor.context": [
 				{
 					"command": "linenotecodelens.removeNote",
-					"group": "linenote@2"
+					"group": "linenote@1"
 				},
 				{
 					"command": "linenotecodelens.moveSingleNote",
-					"group": "linenote@4"
+					"group": "linenote@2"
 				},
 				{
 					"command": "linenotecodelens.moveNoteAndSubsequential",
@@ -102,6 +108,12 @@
 				}
 			]
 		},
+        "submenus": [
+            {
+                "id": "linenote.editor.context",
+                "label": "Line Note"
+            }
+        ],
 		"configuration": {
 			"properties": {}
 		}
