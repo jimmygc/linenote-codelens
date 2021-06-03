@@ -36,7 +36,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 
   const treeViewProvider = new NoteTreeProvider();
   let treeview = vscode.window.createTreeView(
-      'LinenoteExplorer', 
+      'LinenoteExplorer',
       { treeDataProvider: treeViewProvider, showCollapseAll: true});
 
   const linenoteScheme = 'linenote';
@@ -196,7 +196,7 @@ export const activate = (context: vscode.ExtensionContext) => {
         let relativePath = path.relative(rootPath, fsPath)
         treeview.reveal(
             {fspath: relativePath, type:vscode.FileType.Directory, line_no:0},
-            {focus: true, select: false, expand: true})
+            {focus: false, select: false, expand: true})
     }),
     vscode.window.onDidChangeTextEditorSelection ( e => {
         const editor = vscode.window.activeTextEditor;
@@ -208,7 +208,7 @@ export const activate = (context: vscode.ExtensionContext) => {
             let relativePath = path.relative(rootPath, fsPath)
             treeview.reveal(
                 {fspath: relativePath, type:vscode.FileType.File, line_no:line_no},
-                {focus: true, select: false, expand: true})
+                {focus: false, select: false, expand: true})
         }
     }),
     vscode.workspace.onDidChangeTextDocument(event => {}),
