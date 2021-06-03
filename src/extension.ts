@@ -405,14 +405,14 @@ export const activate = (context: vscode.ExtensionContext) => {
             {
                 return
             }
-            const [from, _] = getSelectionLineRange(editor);
+            [from,] = getSelectionLineRange(editor);
             let selection = await vscode.window.showInformationMessage(
                 `Move single note: Select target line and hit OK?`, `OK`, `Cancel`);
             if(selection.toLowerCase() != "ok")
             {
                 return
             }
-            const [to, __] = getSelectionLineRange(editor);
+            [to,] = getSelectionLineRange(editor);
             if(to > editor.document.lineCount || to < 0 || from == to)
             {
                 return;
