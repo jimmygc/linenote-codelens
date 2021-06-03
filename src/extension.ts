@@ -190,25 +190,29 @@ export const activate = (context: vscode.ExtensionContext) => {
     new vscode.Disposable(() => (disposed = true)),
 
     vscode.window.onDidChangeActiveTextEditor(editor => {
-        treeViewProvider._onDidChangeTreeData.fire();
-        const fsPath = editor.document.uri.fsPath;
-        let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-        let relativePath = path.relative(rootPath, fsPath)
-        treeview.reveal(
-            {fspath: relativePath, type:vscode.FileType.Directory, line_no:0},
-            {focus: false, select: false, expand: true})
-    }),
-    vscode.window.onDidChangeTextEditorSelection ( e => {
-        const editor = vscode.window.activeTextEditor;
-        if (editor)
-        {
+        if (treeview.visible) {
+            treeViewProvider._onDidChangeTreeData.fire();
             const fsPath = editor.document.uri.fsPath;
-            const line_no = e.selections[0].start.line + 1;
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             let relativePath = path.relative(rootPath, fsPath)
             treeview.reveal(
-                {fspath: relativePath, type:vscode.FileType.File, line_no:line_no},
+                {fspath: relativePath, type:vscode.FileType.Directory, line_no:0},
                 {focus: false, select: false, expand: true})
+        }
+    }),
+    vscode.window.onDidChangeTextEditorSelection ( e => {
+        if (treeview.visible) {
+            const editor = vscode.window.activeTextEditor;
+            if (editor)
+            {
+                const fsPath = editor.document.uri.fsPath;
+                const line_no = e.selections[0].start.line + 1;
+                let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+                let relativePath = path.relative(rootPath, fsPath)
+                treeview.reveal(
+                    {fspath: relativePath, type:vscode.FileType.File, line_no:line_no},
+                    {focus: false, select: false, expand: true})
+            }
         }
     }),
     vscode.workspace.onDidChangeTextDocument(event => {}),
