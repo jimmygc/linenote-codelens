@@ -5,10 +5,8 @@ import * as path from "path";
 
 export interface Entry {
     fspath: string;
-    note: string;
     line_no: number;
     type: vscode.FileType;
-    uri: vscode.Uri;
 }
 class LineNoteFile extends vscode.TreeItem {
     iconPath = {
@@ -25,8 +23,6 @@ export class LineNoteEntry extends vscode.TreeItem {
     };
     contextValue = "note";
 }
-
-const linenoteScheme = 'linenote';
 
 export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
 	private db :sqlite.Database;
@@ -49,16 +45,27 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         else
         {
             let full_path = path.join(rootPath, element.fspath);
-            treeItem = new LineNoteEntry(
-                `${element.note.trim()} (L${element.line_no})`,
-                vscode.TreeItemCollapsibleState.None);
-            treeItem.command = {
-                title: `${element.note.trim()} (L${element.line_no})`,
-                command: "linenotecodelens.gotoline",
-                arguments: [full_path, element.line_no]
-            };
+            let row = await this.db.get("SELECT * FROM linenote_notes where fspath = ? AND line_no = ?", element.fspath, element.line_no);
+            if (row) {
+                treeItem = new LineNoteEntry(
+                    `${row.note_content.trim()} (L${element.line_no})`,
+                    vscode.TreeItemCollapsibleState.None);
+                treeItem.command = {
+                    title: `${row.note_content.trim()} (L${element.line_no})`,
+                    command: "linenotecodelens.gotoline",
+                    arguments: [full_path, element.line_no]
+                };
+            }
         }
         return treeItem;
+    }
+
+    async getParent(element: Entry): Promise<Entry> {
+        if (element.type == vscode.FileType.File)
+        {
+            return {fspath: element.fspath, type:vscode.FileType.Directory, line_no:0};
+        }
+        return null
     }
 
     async getChildren(element?: Entry): Promise<Entry[]> {
@@ -71,7 +78,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
             {
                 for (let row of results)
                 {
-                    let e :Entry = {fspath: row.fspath, type:vscode.FileType.Directory, note:"", line_no:0, uri:null};
+                    let e :Entry = {fspath: row.fspath, type:vscode.FileType.Directory, line_no:0};
                     children.push(e)
                 }
             }
@@ -80,18 +87,15 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         else if (element.type == vscode.FileType.Directory) {
             let children:Entry[] = [];
             let results = await this.db.all("SELECT * FROM linenote_notes where fspath = ?", element.fspath);
-            let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             if (results)
             {
                 for (let row of results)
                 {
-                    let full_path = path.join(rootPath, row.fspath);
                     let e :Entry = {
                         fspath: row.fspath,
                         type:vscode.FileType.File,
-                        line_no: row.line_no,
-                        note: row.note_content,
-                        uri: vscode.Uri.parse(linenoteScheme + ":/" + full_path + "_L" + row.line_no)};
+                        line_no: row.line_no
+                    }
                     children.push(e)
                 }
             }

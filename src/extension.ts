@@ -189,15 +189,37 @@ export const activate = (context: vscode.ExtensionContext) => {
 
     vscode.window.onDidChangeActiveTextEditor(editor => {
         treeViewProvider._onDidChangeTreeData.fire();
+        const fsPath = editor.document.uri.fsPath;
+        let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        let relativePath = path.relative(rootPath, fsPath)
+        treeview.reveal(
+            {fspath: relativePath, type:vscode.FileType.Directory, line_no:0},
+            {focus: true, select: false, expand: true})
+    }),
+    vscode.window.onDidChangeTextEditorSelection ( e => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor)
+        {
+            const fsPath = editor.document.uri.fsPath;
+            const line_no = e.selections[0].start.line + 1;
+            let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+            let relativePath = path.relative(rootPath, fsPath)
+            treeview.reveal(
+                {fspath: relativePath, type:vscode.FileType.File, line_no:line_no},
+                {focus: true, select: false, expand: true})
+        }
     }),
     vscode.workspace.onDidChangeTextDocument(event => {}),
     vscode.workspace.onDidCloseTextDocument(async event => {}),
     vscode.workspace.onDidChangeConfiguration(async event => {}),
 
     vscode.commands.registerCommand("linenotecodelens.openNote", async (resource?: Entry) => {
-        if (resource.uri) {
-            console.log("open node: " + resource.uri);
-            let doc = await vscode.workspace.openTextDocument(resource.uri);
+        if (resource.type && resource.type == vscode.FileType.File) {
+            let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+            let full_path = path.join(rootPath, resource.fspath);
+            let uri = vscode.Uri.parse(linenoteScheme + ':/' + full_path + "_L" + resource.line_no);
+            console.log("delete node: " + uri);
+            let doc = await vscode.workspace.openTextDocument(uri);
             await vscode.window.showTextDocument(doc,
                 {
                     viewColumn: vscode.ViewColumn.Beside,
@@ -225,15 +247,12 @@ export const activate = (context: vscode.ExtensionContext) => {
     }),
 
     vscode.commands.registerCommand("linenotecodelens.removeNote", async (resource?: Entry) => {
-        if (resource.uri) {
-            console.log("delete node: " + resource.uri);
-            let doc = await vscode.workspace.openTextDocument(resource.uri);
-            await vscode.window.showTextDocument(doc,
-                {
-                    viewColumn: vscode.ViewColumn.Beside,
-                    preview: false
-                });
-            await vscode.workspace.fs.delete(resource.uri, {useTrash: false});
+        if (resource.type && resource.type == vscode.FileType.File) {
+            let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+            let full_path = path.join(rootPath, resource.fspath);
+            let uri = vscode.Uri.parse(linenoteScheme + ':/' + full_path + "_L" + resource.line_no);
+            console.log("delete node: " + uri);
+            await vscode.workspace.fs.delete(uri, {useTrash: false});
             codelensProvider._onDidChangeCodeLenses.fire();
             treeViewProvider._onDidChangeTreeData.fire();
         }
@@ -262,29 +281,53 @@ export const activate = (context: vscode.ExtensionContext) => {
         }
     }),
 
-	vscode.commands.registerCommand("linenotecodelens.moveNoteAndSubsequential", async () => {
-		const editor = vscode.window.activeTextEditor;
-		if(!editor)
-		{
-			return;
-		}
-
-		const fsPath = editor.document.uri.fsPath;
-        const [from, _] = getSelectionLineRange(editor);
-        let selection = await vscode.window.showInformationMessage(
-            `Move all notes: Select target line and hit OK?`, `OK`, `Cancel`);
-        if(selection.toLowerCase() != "ok")
+	vscode.commands.registerCommand("linenotecodelens.moveNoteAndSubsequential", async (resource?: Entry) => {
+        let fsPath:string;
+        let from:number;
+        let to:number;
+        if (resource.type && resource.type == vscode.FileType.File)
         {
-            return
+            let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+            fsPath = path.join(rootPath, resource.fspath);
+            from = resource.line_no;
+            let input = await vscode.window.showInputBox({
+                placeHolder: "Input line number to move to."
+            });
+            to = parseInt(input)
+            if(isNaN(to))
+            {
+                return;
+            }
+            if(to < 0 || from == to)
+            {
+                return;
+            }
         }
-        const [to, __] = getSelectionLineRange(editor);
-		if(to > editor.document.lineCount || to < 0 || from == to)
-		{
-			return;
-		}
+        else
+        {
+            const editor = vscode.window.activeTextEditor;
+            if(!editor)
+            {
+                return;
+            }
+            fsPath = editor.document.uri.fsPath;
+            [from, ] = getSelectionLineRange(editor);
+            let selection = await vscode.window.showInformationMessage(
+                `Move all notes: Select target line and hit OK?`, `OK`, `Cancel`);
+            if(selection.toLowerCase() != "ok")
+            {
+                return
+            }
+            [to, ] = getSelectionLineRange(editor);
+            if(to > editor.document.lineCount || to < 0 || from == to)
+            {
+                return;
+            }
+        }
+
         const line_no = to - from;
-        selection = await vscode.window.showInformationMessage(
-            `Move note on line ${from} and the following lines to line ${to}?`, `Yes`, `No`);
+        let selection = await vscode.window.showInformationMessage(
+            `Move note on ${fsPath} line ${from} and the following lines to line ${to}?`, `Yes`, `No`);
         if(selection.toLowerCase() != "yes")
         {
             return
@@ -305,7 +348,7 @@ export const activate = (context: vscode.ExtensionContext) => {
                     if (check_row.line_no == check_to && check_row.note_content.toString().trim())
                     {
                         let selection = await vscode.window.showInformationMessage(
-                            `Overwrite note on line ${check_to}?`, `Yes`, `No`);
+                            `Overwrite note on ${fsPath} line ${check_to}?`, `Yes`, `No`);
                         if(selection.toLowerCase() != "yes")
                         {
                             return
@@ -330,30 +373,52 @@ export const activate = (context: vscode.ExtensionContext) => {
 		codelensProvider._onDidChangeCodeLenses.fire();
         treeViewProvider._onDidChangeTreeData.fire();
 		vscode.window.showInformationMessage(
-            `Successfully move all notes ${line_no>0?"down":"up"} ${Math.abs(line_no)} lines from line ${from}.`)
+            `Successfully move all notes of ${fsPath} ${line_no>0?"down":"up"} ${Math.abs(line_no)} lines from line ${from}.`)
 	}),
 
-    vscode.commands.registerCommand("linenotecodelens.moveSingleNote", async () => {
-		const editor = vscode.window.activeTextEditor;
-		if(!editor)
-		{
-			return
-		}
-        const [from, _] = getSelectionLineRange(editor);
-
-        let selection = await vscode.window.showInformationMessage(
-            `Move single note: Select target line and hit OK?`, `OK`, `Cancel`);
-        if(selection.toLowerCase() != "ok")
+    vscode.commands.registerCommand("linenotecodelens.moveSingleNote", async (resource?: Entry) => {
+        let fsPath:string;
+        let from:number;
+        let to:number;
+        if (resource.type && resource.type == vscode.FileType.File)
         {
-            return
+            let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+            fsPath = path.join(rootPath, resource.fspath);
+            from = resource.line_no;
+            let input = await vscode.window.showInputBox({
+                placeHolder: "Input line number to move to."
+            });
+            to = parseInt(input)
+            if(isNaN(to))
+            {
+                return;
+            }
+            if(to < 0 || from == to)
+            {
+                return;
+            }
         }
-        const [to, __] = getSelectionLineRange(editor);
-		if(to > editor.document.lineCount || to < 0 || from == to)
-		{
-			return;
-		}
-
-		const fsPath = editor.document.uri.fsPath;
+        else
+        {
+            const editor = vscode.window.activeTextEditor;
+            if(!editor)
+            {
+                return
+            }
+            const [from, _] = getSelectionLineRange(editor);
+            let selection = await vscode.window.showInformationMessage(
+                `Move single note: Select target line and hit OK?`, `OK`, `Cancel`);
+            if(selection.toLowerCase() != "ok")
+            {
+                return
+            }
+            const [to, __] = getSelectionLineRange(editor);
+            if(to > editor.document.lineCount || to < 0 || from == to)
+            {
+                return;
+            }
+            fsPath = editor.document.uri.fsPath;
+        }
 		var from_url = linenoteScheme + ':' + fsPath + "_L" + from;
 		var to_url = linenoteScheme + ':' + fsPath + "_L" + to;
 		let source_content = await vscode.workspace.fs.readFile(vscode.Uri.parse(from_url));

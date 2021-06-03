@@ -39,11 +39,13 @@
 			},
 			{
 				"command": "linenotecodelens.moveSingleNote",
-				"title": "LineNote: Move single note"
+				"title": "LineNote: Move single note",
+                "icon": "$(gear)"
 			},
 			{
 				"command": "linenotecodelens.moveNoteAndSubsequential",
-				"title": "LineNote: Move all notes under"
+				"title": "LineNote: Move all notes under",
+                "icon": "$(arrow-down)"
 			},
 			{
 				"command": "linenotecodelens.treeview_refresh",
@@ -62,6 +64,16 @@
             "view/item/context": [
                 {
                     "command": "linenotecodelens.removeNote",
+                    "when": "view == LinenoteExplorer && viewItem == note",
+                    "group": "inline@4"
+                },
+                {
+                    "command": "linenotecodelens.moveNoteAndSubsequential",
+                    "when": "view == LinenoteExplorer && viewItem == note",
+                    "group": "inline@3"
+                },
+                {
+                    "command": "linenotecodelens.moveSingleNote",
                     "when": "view == LinenoteExplorer && viewItem == note",
                     "group": "inline@2"
                 },
