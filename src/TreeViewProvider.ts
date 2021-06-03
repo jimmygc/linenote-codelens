@@ -44,7 +44,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         {
             treeItem = new LineNoteFile(
                 `${element.fspath.trim()}`,
-                vscode.TreeItemCollapsibleState.Expanded);
+                vscode.TreeItemCollapsibleState.Collapsed);
         }
         else
         {
