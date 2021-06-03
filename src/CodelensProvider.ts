@@ -13,22 +13,14 @@ export class CodelensProvider implements vscode.CodeLensProvider {
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
 	private db :sqlite.Database;
 
-	private getProjectRoot = (fsPath :string) => {
-		const wpacefolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(fsPath));
-		if (!wpacefolder) {
-			return ""
-		}
-		return wpacefolder.uri.fsPath;
-	}
-
 	private async init(rootPath :string): Promise<void> {
-		this.db = await getDB(rootPath);
+		this.db = await getDB();
 	}
 
 	async generateCodelens(editor: vscode.TextEditor, fsPath: string) {
 		let codeLenses: vscode.CodeLens[] = []
 		const linenoteScheme = 'linenote';
-		const projectRoot = this.getProjectRoot(fsPath);
+		const projectRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		const reportedLines: number[] = []
 		if (!projectRoot) {
 			return codeLenses

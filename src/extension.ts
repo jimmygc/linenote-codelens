@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as sqlite from 'sqlite';
 import { CodelensProvider } from './CodelensProvider';
+import { NoteTreeProvider, Entry } from './TreeViewProvider';
 import * as path from "path";
 import { getDB } from "./db";
 import * as fs from 'fs';
@@ -31,19 +32,12 @@ export const activate = (context: vscode.ExtensionContext) => {
   let disposed: boolean = false;
 
   const codelensProvider = new CodelensProvider();
-
   vscode.languages.registerCodeLensProvider("*", codelensProvider);
 
-  const linenoteScheme = 'linenote';
+  const treeViewProvider = new NoteTreeProvider();
+  let treeview = vscode.window.createTreeView('LinenoteExplorer', { treeDataProvider: treeViewProvider });
 
-  const getProjectRoot = (fsPath :string) => {
-	// console.debug(`getProjectRoot: fsPath = ${fsPath}`);
-	const wpacefolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(fsPath));
-	if (!wpacefolder) {
-		return "";
-	}
-	return wpacefolder.uri.fsPath;
-  }
+  const linenoteScheme = 'linenote';
 
   class linenoteFS implements vscode.FileSystemProvider {
 
@@ -63,13 +57,13 @@ export const activate = (context: vscode.ExtensionContext) => {
 		{
 			throw new Error(`${full_path.slice(index + 2)} is not a number`)
 		}
-		let rootPath = getProjectRoot(fsPath);
+		let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		let relativePath = path.relative(rootPath, fsPath);
 		return [rootPath, relativePath, line_no]
 	}
 
 	private async init(rootPath :string): Promise<void> {
-		this.db = await getDB(rootPath);
+		this.db = await getDB();
 	}
 
 
@@ -132,20 +126,19 @@ export const activate = (context: vscode.ExtensionContext) => {
   }
 
   context.subscriptions.push(vscode.workspace.registerFileSystemProvider(linenoteScheme, new linenoteFS(), { isCaseSensitive: true }));
-
+  context.subscriptions.push(treeview);
   const removeNotCorrespondingNotes = async () => {
 	const editor = vscode.window.activeTextEditor;
 	if(!editor)
 	{
 		return;
 	}
-	const fsPath = editor.document.uri.fsPath;
-	let rootPath = getProjectRoot(fsPath)
+	let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
 	if(!rootPath)
 	{
 		return;
 	}
-	let db = await getDB(rootPath);
+	let db = await getDB();
 	let results = await db.all("SELECT DISTINCT fspath FROM linenote_notes");
 	for(let row of results) {
 		let fullPath = path.join(rootPath, row.fspath);
@@ -154,6 +147,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 			db.run("DELETE FROM linenote_notes WHERE fspath = ?", row.fspath)
 			vscode.window.showInformationMessage(`Auto removed notes of ${row.fspath}.`)
 			codelensProvider._onDidChangeCodeLenses.fire();
+            treeViewProvider._onDidChangeTreeData.fire();
 		}
 	}
     results = await db.all("SELECT * FROM linenote_notes");
@@ -164,6 +158,7 @@ export const activate = (context: vscode.ExtensionContext) => {
                 "DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?", row.fspath, row.line_no);
             vscode.window.showInformationMessage(`Auto removed empty note of ${row.fspath}:${row.line_no}.`)
             codelensProvider._onDidChangeCodeLenses.fire();
+            treeViewProvider._onDidChangeTreeData.fire();
         }
     }
   }
@@ -192,48 +187,79 @@ export const activate = (context: vscode.ExtensionContext) => {
   context.subscriptions.push(
     new vscode.Disposable(() => (disposed = true)),
 
-    vscode.window.onDidChangeActiveTextEditor(editor => {}),
+    vscode.window.onDidChangeActiveTextEditor(editor => {
+        treeViewProvider._onDidChangeTreeData.fire();
+    }),
     vscode.workspace.onDidChangeTextDocument(event => {}),
     vscode.workspace.onDidCloseTextDocument(async event => {}),
     vscode.workspace.onDidChangeConfiguration(async event => {}),
 
-    vscode.commands.registerCommand("linenotecodelens.openNote", async () => {
-		const editor = vscode.window.activeTextEditor;
-		if (editor) {
-			const fsPath = editor.document.uri.fsPath;
-			const [from, _] = getSelectionLineRange(editor);
-			let uri = vscode.Uri.parse(linenoteScheme + ':/' + fsPath + "_L" + from);
-			let doc :vscode.TextDocument;
-			doc = await vscode.workspace.openTextDocument(uri);
-			await vscode.window.showTextDocument(doc,
-				{
-					viewColumn: vscode.ViewColumn.Beside,
-					preview: false
-				});
-			codelensProvider._onDidChangeCodeLenses.fire();
-		}
+    vscode.commands.registerCommand("linenotecodelens.openNote", async (resource?: Entry) => {
+        if (resource.uri) {
+            console.log("open node: " + resource.uri);
+            let doc = await vscode.workspace.openTextDocument(resource.uri);
+            await vscode.window.showTextDocument(doc,
+                {
+                    viewColumn: vscode.ViewColumn.Beside,
+                    preview: false
+                });
+        }
+        else
+        {
+            const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                const fsPath = editor.document.uri.fsPath;
+                const [from, _] = getSelectionLineRange(editor);
+                let uri = vscode.Uri.parse(linenoteScheme + ':/' + fsPath + "_L" + from);
+                let doc :vscode.TextDocument;
+                doc = await vscode.workspace.openTextDocument(uri);
+                await vscode.window.showTextDocument(doc,
+                    {
+                        viewColumn: vscode.ViewColumn.Beside,
+                        preview: false
+                    });
+                codelensProvider._onDidChangeCodeLenses.fire();
+                treeViewProvider._onDidChangeTreeData.fire();
+            }
+        }
     }),
 
-    vscode.commands.registerCommand("linenotecodelens.removeNote", async () => {
-		const editor = vscode.window.activeTextEditor;
-		if (editor) {
-			const fsPath = editor.document.uri.fsPath;
-			const [from, _] = getSelectionLineRange(editor);
-			let url = linenoteScheme + ':/' + fsPath + "_L" + from;
-			let note_content = await vscode.workspace.fs.readFile(vscode.Uri.parse(url));
-			if(!note_content.toString()) {
-				return;
-			}
-			let selection = await vscode.window.showInformationMessage(
-                `Delete note on line ${from}?`, `Yes`, `No`);
-			if(selection.toLowerCase() != "yes")
-			{
-				return
-			}
-			await vscode.workspace.fs.delete(vscode.Uri.parse(url), {useTrash: false});
-			codelensProvider._onDidChangeCodeLenses.fire();
-			vscode.window.showInformationMessage(`Successfully remove note from line ${from}.`)
-		}
+    vscode.commands.registerCommand("linenotecodelens.removeNote", async (resource?: Entry) => {
+        if (resource.uri) {
+            console.log("delete node: " + resource.uri);
+            let doc = await vscode.workspace.openTextDocument(resource.uri);
+            await vscode.window.showTextDocument(doc,
+                {
+                    viewColumn: vscode.ViewColumn.Beside,
+                    preview: false
+                });
+            await vscode.workspace.fs.delete(resource.uri, {useTrash: false});
+            codelensProvider._onDidChangeCodeLenses.fire();
+            treeViewProvider._onDidChangeTreeData.fire();
+        }
+        else
+        {
+            const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                const fsPath = editor.document.uri.fsPath;
+                const [from, _] = getSelectionLineRange(editor);
+                let url = linenoteScheme + ':/' + fsPath + "_L" + from;
+                let note_content = await vscode.workspace.fs.readFile(vscode.Uri.parse(url));
+                if(!note_content.toString()) {
+                    return;
+                }
+                let selection = await vscode.window.showInformationMessage(
+                    `Delete note on line ${from}?`, `Yes`, `No`);
+                if(selection.toLowerCase() != "yes")
+                {
+                    return
+                }
+                await vscode.workspace.fs.delete(vscode.Uri.parse(url), {useTrash: false});
+                codelensProvider._onDidChangeCodeLenses.fire();
+                treeViewProvider._onDidChangeTreeData.fire();
+                vscode.window.showInformationMessage(`Successfully remove note from line ${from}.`)
+            }
+        }
     }),
 
 	vscode.commands.registerCommand("linenotecodelens.moveNoteAndSubsequential", async () => {
@@ -263,8 +289,8 @@ export const activate = (context: vscode.ExtensionContext) => {
         {
             return
         }
-		let rootPath = getProjectRoot(fsPath)
-		let db = await getDB(rootPath);
+		let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+		let db = await getDB();
 		let relativePath = path.relative(rootPath, fsPath);
 		let results = await db.all(
             "SELECT * FROM linenote_notes WHERE fspath = ? and line_no >= ?", relativePath, from);
@@ -302,6 +328,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 			await vscode.workspace.fs.delete(vscode.Uri.parse(from_url));
 		}
 		codelensProvider._onDidChangeCodeLenses.fire();
+        treeViewProvider._onDidChangeTreeData.fire();
 		vscode.window.showInformationMessage(
             `Successfully move all notes ${line_no>0?"down":"up"} ${Math.abs(line_no)} lines from line ${from}.`)
 	}),
@@ -348,9 +375,24 @@ export const activate = (context: vscode.ExtensionContext) => {
 		await vscode.workspace.fs.writeFile(vscode.Uri.parse(to_url), source_content);
 		await vscode.workspace.fs.delete(vscode.Uri.parse(from_url));
 		codelensProvider._onDidChangeCodeLenses.fire();
+        treeViewProvider._onDidChangeTreeData.fire();
 		vscode.window.showInformationMessage(
             `Successfully move single note from line ${from} to line ${to}.`)
-    })
+    }),
+    vscode.commands.registerCommand("linenotecodelens.gotoline", async (fspath:string, line: number) => {
+        let uri = vscode.Uri.parse("file://" + fspath);
+        await vscode.window.showTextDocument(uri);
+        const editor = vscode.window.activeTextEditor;
+        if(!editor)
+        {
+            return
+        }
+        let range = editor.document.lineAt(line-1).range;
+        editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+    }),
+    vscode.commands.registerCommand("linenotecodelens.treeview_refresh", async () => {
+        treeViewProvider._onDidChangeTreeData.fire()
+    }),
   );
 };
 

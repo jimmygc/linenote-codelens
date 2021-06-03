@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import * as sqlite3 from "sqlite3";
 import * as sqlite from 'sqlite';
 import * as path from "path";
@@ -5,8 +6,9 @@ import * as path from "path";
 let currentProjectRoot :string;
 let db :sqlite.Database;
 
-export const getDB = async (rootPath: string) :Promise<sqlite.Database<sqlite3.Database, sqlite3.Statement>> => {
+export const getDB = async () :Promise<sqlite.Database<sqlite3.Database, sqlite3.Statement>> => {
 	// console.info(`rootPath = ${rootPath}`);
+    let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
 	if(rootPath && (!db || currentProjectRoot != rootPath))
 	{
 		if(db)

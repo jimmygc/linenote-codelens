@@ -3,7 +3,7 @@
 	"repository": "https://github.com/jimmygc/linenote-codelens.git",
 	"displayName": "Note Line in Codelens",
 	"description": "note line in codelens",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"publisher": "jimmygc",
 	"engines": {
 		"vscode": "^1.26.0"
@@ -16,14 +16,26 @@
 	],
 	"main": "./out/extension",
 	"contributes": {
+        "views": {
+            "explorer": [
+              {
+                "id": "LinenoteExplorer",
+                "name": "Linenote Explorer",
+                "icon": "$(notebook)",
+                "contextualTitle": "Linenote Explorer"
+              }
+            ]
+        },
 		"commands": [
 			{
 				"command": "linenotecodelens.openNote",
-				"title": "LineNote: Open note"
+				"title": "LineNote: Open note",
+                "icon": "$(edit)"
 			},
 			{
 				"command": "linenotecodelens.removeNote",
-				"title": "LineNote: Delete note"
+				"title": "LineNote: Delete note",
+                "icon": "$(close)"
 			},
 			{
 				"command": "linenotecodelens.moveSingleNote",
@@ -32,9 +44,33 @@
 			{
 				"command": "linenotecodelens.moveNoteAndSubsequential",
 				"title": "LineNote: Move all notes under"
+			},
+			{
+				"command": "linenotecodelens.treeview_refresh",
+				"title": "Refresh",
+				"icon": "$(refresh)"
 			}
 		],
 		"menus": {
+            "view/title": [
+                {
+                    "command": "linenotecodelens.treeview_refresh",
+                    "when": "view == LinenoteExplorer",
+                    "group": "navigation@1"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "linenotecodelens.removeNote",
+                    "when": "view == LinenoteExplorer && viewItem == note",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "linenotecodelens.openNote",
+                    "when": "view == LinenoteExplorer && viewItem == note",
+                    "group": "inline@1"
+                }
+            ],
 			"editor/context": [
 				{
 					"command": "linenotecodelens.openNote",
