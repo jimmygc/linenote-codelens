@@ -239,13 +239,19 @@ export const activate = async (context: vscode.ExtensionContext) => {
             if (editor)
             {
                 const fsPath = editor.document.uri.fsPath;
-                const line_no = e.selections[0].start.line + 1;
                 let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+                const line_no = e.selections[0].start.line + 1;
                 let relativePath = path.relative(rootPath, fsPath)
-                await treeview.reveal(
-                    {fspath: relativePath,
-                     type:LineNoteEntryType.Note, line_no:line_no},
-                    {focus: false, select: true, expand: false})
+                let uri = vscode.Uri.parse(
+                    linenoteScheme + ':/' + fsPath + "_L" + line_no);
+                let content = await vscode.workspace.fs.readFile(uri);
+                if(content.toString())
+                {
+                    treeview.reveal(
+                        {fspath: relativePath,
+                         type:LineNoteEntryType.Note, line_no:line_no},
+                        {focus: false, select: true, expand: false})
+                }
             }
         }
     }),
@@ -253,7 +259,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
     vscode.workspace.onDidCloseTextDocument(async event => {}),
     vscode.workspace.onDidChangeConfiguration(async event => {}),
 
-    vscode.commands.registerCommand("linenotecodelens.openNote", 
+    vscode.commands.registerCommand("linenotecodelens.openNote",
             async (resource?: Entry) => {
         if(resource && (resource.type == LineNoteEntryType.Note ||
             resource.type == LineNoteEntryType.StarNote)) {
@@ -290,7 +296,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
         }
     }),
 
-    vscode.commands.registerCommand("linenotecodelens.removeNote", 
+    vscode.commands.registerCommand("linenotecodelens.removeNote",
             async (resource?: Entry) => {
         if(resource && (resource.type == LineNoteEntryType.Note ||
             resource.type == LineNoteEntryType.StarNote)) {
@@ -310,7 +316,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 const fsPath = editor.document.uri.fsPath;
                 const [from, _] = getSelectionLineRange(editor);
                 let url = linenoteScheme + ':/' + fsPath + "_L" + from;
-                let note_content = 
+                let note_content =
                     await vscode.workspace.fs.readFile(vscode.Uri.parse(url));
                 if(!note_content.toString()) {
                     return;
