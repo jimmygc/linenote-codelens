@@ -116,6 +116,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
                  VALUES(?,?,?);",
                 fsPath, line_no, content.toString())
         }
+        treeViewProvider._onDidChangeTreeData.fire();
 	}
 	createDirectory(uri: vscode.Uri): void {}
 	readDirectory(uri: vscode.Uri): [string, vscode.FileType][] { return [] }
@@ -125,6 +126,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
 		console.debug("deleting file " + fsPath);
 		await this.db.run(
             "DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?", fsPath, line_no)
+        treeViewProvider._onDidChangeTreeData.fire();
 	}
 	async rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): Promise<void> {
 		let [root_path, from_path, from_lineno] = this.uri2path_lineno(oldUri);
@@ -141,6 +143,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 WHERE fspath = ? AND line_no = ?",
                 to_path, to_lineno, from_path, from_lineno)
 		}
+        treeViewProvider._onDidChangeTreeData.fire();
 	}
   }
 
