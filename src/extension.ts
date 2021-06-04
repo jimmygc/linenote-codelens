@@ -468,7 +468,6 @@ export const activate = async (context: vscode.ExtensionContext) => {
 		}
 		console.debug("Move note from " + from_url + " to " + to_url);
 		await vscode.workspace.fs.writeFile(vscode.Uri.parse(to_url), source_content);
-        console.log("fuck");
 		await vscode.workspace.fs.delete(vscode.Uri.parse(from_url));
 		codelensProvider._onDidChangeCodeLenses.fire();
         treeViewProvider._onDidChangeTreeData.fire();
