@@ -212,8 +212,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
                 let relativePath = path.relative(rootPath, fsPath)
                 await treeview.reveal(
-                    {fspath: relativePath, type:vscode.FileType.File, line_no:line_no},
-                    {focus: true, select: false, expand: true})
+                    {fspath: relativePath, type:LineNoteEntryType.Note, line_no:line_no},
+                    {focus: false, select: true, expand: false})
             }
         }
     }),
