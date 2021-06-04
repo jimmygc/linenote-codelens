@@ -99,8 +99,23 @@ export const activate = async (context: vscode.ExtensionContext) => {
 		let [rootPath, fsPath, line_no] = this.uri2path_lineno(uri);
 		await this.init(rootPath);
 		console.debug("writing file " + uri+ " :" + content.toString());
-		await this.db.run(
-            "INSERT OR REPLACE INTO linenote_notes VALUES (?,?,?)",fsPath, line_no, content.toString())
+		const res = await this.db.get(
+            "SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?",
+            fsPath, line_no)
+        if(res)
+        {
+            await this.db.run(
+                "UPDATE linenote_notes set note_content = ? \
+                where fspath = ? AND line_no = ?",
+                content.toString(), fsPath, line_no)
+        }
+        else
+        {
+            await this.db.run(
+                "INSERT INTO linenote_notes(fspath, line_no, note_content) \
+                 VALUES(?,?,?);",
+                fsPath, line_no, content.toString())
+        }
 	}
 	createDirectory(uri: vscode.Uri): void {}
 	readDirectory(uri: vscode.Uri): [string, vscode.FileType][] { return [] }
@@ -120,11 +135,11 @@ export const activate = async (context: vscode.ExtensionContext) => {
             "SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?", from_path, from_lineno)
 		if(res)
 		{
-			// console.debug(res.note_content);
+			// console.debug(res.note_content);to_path, to_lineno, res.note_content)
 			await this.db.run(
-                "INSERT OR REPLACE INTO linenote_notes VALUES (?,?,?)", to_path, to_lineno, res.note_content)
-			await this.db.run(
-                "DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?", from_path, from_lineno)
+                "UPDATE linenote_notes SET fspath = ?, line_no = ? \
+                WHERE fspath = ? AND line_no = ?",
+                to_path, to_lineno, from_path, from_lineno)
 		}
 	}
   }
@@ -450,6 +465,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
 		}
 		console.debug("Move note from " + from_url + " to " + to_url);
 		await vscode.workspace.fs.writeFile(vscode.Uri.parse(to_url), source_content);
+        console.log("fuck");
 		await vscode.workspace.fs.delete(vscode.Uri.parse(from_url));
 		codelensProvider._onDidChangeCodeLenses.fire();
         treeViewProvider._onDidChangeTreeData.fire();
