@@ -3,23 +3,48 @@ import * as sqlite from 'sqlite';
 import { getDB } from "./db";
 import * as path from "path";
 
+export enum LineNoteEntryType {
+    File = 1,
+    Note = 2,
+    StarDir = 3,
+    StarFile = 4,
+    StarNote = 5
+}
+
 export interface Entry {
     fspath: string;
     line_no: number;
-    type: vscode.FileType;
+    type: LineNoteEntryType;
 }
+
+class LineNoteStarDir extends vscode.TreeItem {
+    iconPath = {
+        light: path.join(__filename, '..', '..', 'resources', 'star.png'),
+        dark: path.join(__filename, '..', '..', 'resources', 'star.png')
+    };
+    contextValue = "star";
+}
+
 class LineNoteFile extends vscode.TreeItem {
     iconPath = {
-        light: path.join(__filename, '..', '..', 'resources', 'light', 'document.svg'),
-        dark: path.join(__filename, '..', '..', 'resources', 'dark', 'document.svg')
+        light: path.join(__filename, '..', '..', 'resources', 'file.png'),
+        dark: path.join(__filename, '..', '..', 'resources', 'file.png'),
     };
     contextValue = "file";
 }
 
 export class LineNoteEntry extends vscode.TreeItem {
     iconPath = {
-        light: path.join(__filename, '..', '..', 'resources', 'light', 'string.svg'),
-        dark: path.join(__filename, '..', '..', 'resources', 'dark', 'string.svg')
+        light: path.join(__filename, '..', '..', 'resources', 'bookmark.png'),
+        dark: path.join(__filename, '..', '..', 'resources', 'bookmark.png'),
+    };
+    contextValue = "note";
+}
+
+export class LineNoteStarEntry extends vscode.TreeItem {
+    iconPath = {
+        light: path.join(__filename, '..', '..', 'resources', 'bookmark_star.png'),
+        dark: path.join(__filename, '..', '..', 'resources', 'bookmark_star.png'),
     };
     contextValue = "note";
 }
@@ -34,22 +59,47 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
 	}
 
     async getTreeItem(element: Entry): Promise<vscode.TreeItem> {
+        await this.init();
+        if(!this.db)
+        {
+            return null;
+        }
         let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
         let treeItem:vscode.TreeItem;
-        if(element.type == vscode.FileType.Directory)
+        if(element.type == LineNoteEntryType.File)
         {
             treeItem = new LineNoteFile(
                 `${element.fspath.trim()}`,
                 vscode.TreeItemCollapsibleState.Collapsed);
+        }
+        else if (element.type == LineNoteEntryType.StarFile)
+        {
+            treeItem = new LineNoteFile(
+                `${element.fspath.trim()}`,
+                vscode.TreeItemCollapsibleState.Expanded);
+        }
+        else if (element.type == LineNoteEntryType.StarDir) {
+            treeItem = new LineNoteStarDir(
+                `Star notes`,
+                vscode.TreeItemCollapsibleState.Expanded);
         }
         else
         {
             let full_path = path.join(rootPath, element.fspath);
             let row = await this.db.get("SELECT * FROM linenote_notes where fspath = ? AND line_no = ?", element.fspath, element.line_no);
             if (row) {
-                treeItem = new LineNoteEntry(
-                    `${row.note_content.trim()} (L${element.line_no})`,
-                    vscode.TreeItemCollapsibleState.None);
+                if (row.star == 1)
+                {
+                    treeItem = new LineNoteStarEntry(
+                        `${row.note_content.trim()} (L${element.line_no})`,
+                        vscode.TreeItemCollapsibleState.None);
+                }
+                else
+                {
+                    treeItem = new LineNoteEntry(
+                        `${row.note_content.trim()} (L${element.line_no})`,
+                        vscode.TreeItemCollapsibleState.None);
+                }
                 treeItem.command = {
                     title: `${row.note_content.trim()} (L${element.line_no})`,
                     command: "linenotecodelens.gotoline",
@@ -61,45 +111,124 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
     }
 
     async getParent(element: Entry): Promise<Entry> {
-        if (element.type == vscode.FileType.File)
+        await this.init();
+        if(!this.db)
         {
-            return {fspath: element.fspath, type:vscode.FileType.Directory, line_no:0};
+            return null;
+        }
+        if (element.type == LineNoteEntryType.Note)
+        {
+            return {
+                fspath: element.fspath,
+                type:LineNoteEntryType.File,
+                line_no:0
+            };
+        }
+        else if (element.type == LineNoteEntryType.StarNote)
+        {
+            return {
+                fspath: element.fspath,
+                type:LineNoteEntryType.StarFile,
+                line_no:0
+            };
+        }
+        else if (element.type == LineNoteEntryType.StarFile)
+        {
+            return {
+                fspath: null,
+                line_no: 0,
+                type: LineNoteEntryType.StarDir
+            }
         }
         return null
     }
 
     async getChildren(element?: Entry): Promise<Entry[]> {
         await this.init();
+        if(!this.db)
+        {
+            return []
+        }
         if(!element)
         {
             let children:Entry[] = [];
-            let results = await this.db.all("SELECT DISTINCT fspath FROM linenote_notes");
-            if (results)
-            {
-                for (let row of results)
+            children.push(
                 {
-                    let e :Entry = {fspath: row.fspath, type:vscode.FileType.Directory, line_no:0};
-                    children.push(e)
+                    fspath: null,
+                    line_no: 0,
+                    type: LineNoteEntryType.StarDir
                 }
-            }
-            return children
-        }
-        else if (element.type == vscode.FileType.Directory) {
-            let children:Entry[] = [];
-            let results = await this.db.all("SELECT * FROM linenote_notes where fspath = ?", element.fspath);
+            )
+
+            let results = await this.db.all("SELECT DISTINCT fspath FROM linenote_notes");
             if (results)
             {
                 for (let row of results)
                 {
                     let e :Entry = {
                         fspath: row.fspath,
-                        type:vscode.FileType.File,
+                        type:LineNoteEntryType.File,
+                        line_no:0
+                    };
+                    children.push(e)
+                }
+            }
+            return children
+        }
+        else if (element.type == LineNoteEntryType.StarDir) {
+            let children:Entry[] = [];
+            let results = await this.db.all(
+                "SELECT DISTINCT fspath FROM linenote_notes where star = 1");
+            if (results)
+            {
+                for (let row of results)
+                {
+                    let e :Entry = {
+                        fspath: row.fspath,
+                        type:LineNoteEntryType.StarFile,
+                        line_no: 0
+                    }
+                    children.push(e)
+                }
+            }
+            return children;
+        }
+        else if (element.type == LineNoteEntryType.File) {
+            let children:Entry[] = [];
+            let results = await this.db.all(
+                "SELECT * FROM linenote_notes where fspath = ?", element.fspath);
+            if (results)
+            {
+                for (let row of results)
+                {
+                    let e :Entry = {
+                        fspath: row.fspath,
+                        type:LineNoteEntryType.Note,
                         line_no: row.line_no
                     }
                     children.push(e)
                 }
             }
             return children
+        }
+        else if (element.type == LineNoteEntryType.StarFile) {
+            let children:Entry[] = [];
+            let results = await this.db.all(
+                "SELECT * FROM linenote_notes WHERE star = 1 AND fspath = ?",
+                element.fspath);
+            if (results)
+            {
+                for (let row of results)
+                {
+                    let e :Entry = {
+                        fspath: row.fspath,
+                        type:LineNoteEntryType.StarNote,
+                        line_no: row.line_no
+                    }
+                    children.push(e)
+                }
+            }
+            return children;
         }
         return []
     }

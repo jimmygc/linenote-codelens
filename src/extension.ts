@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as sqlite from 'sqlite';
 import { CodelensProvider } from './CodelensProvider';
-import { NoteTreeProvider, Entry } from './TreeViewProvider';
+import { NoteTreeProvider, Entry, LineNoteEntryType } from './TreeViewProvider';
 import * as path from "path";
 import { getDB } from "./db";
 import * as fs from 'fs';
@@ -28,8 +28,9 @@ class File implements vscode.FileStat {
     }
 }
 
-export const activate = (context: vscode.ExtensionContext) => {
+export const activate = async (context: vscode.ExtensionContext) => {
   let disposed: boolean = false;
+  await getDB()
 
   const codelensProvider = new CodelensProvider();
   vscode.languages.registerCodeLensProvider("*", codelensProvider);
@@ -78,7 +79,8 @@ export const activate = (context: vscode.ExtensionContext) => {
 		await this.init(rootPath);
 		console.debug("readFile: " + fsPath);
 		const res = await this.db.get(
-            "SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?", fsPath, line_no)
+            "SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?",
+            fsPath, line_no)
 		if(res)
 		{
 			// console.debug(res.note_content);
@@ -189,18 +191,18 @@ export const activate = (context: vscode.ExtensionContext) => {
   context.subscriptions.push(
     new vscode.Disposable(() => (disposed = true)),
 
-    vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (treeview.visible) {
-            treeViewProvider._onDidChangeTreeData.fire();
-            const fsPath = editor.document.uri.fsPath;
-            let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-            let relativePath = path.relative(rootPath, fsPath)
-            treeview.reveal(
-                {fspath: relativePath, type:vscode.FileType.Directory, line_no:0},
-                {focus: true, select: false, expand: true})
-        }
+    vscode.window.onDidChangeActiveTextEditor(async editor => {
+        // if (treeview.visible) {
+        //     // treeViewProvider._onDidChangeTreeData.fire();
+        //     const fsPath = editor.document.uri.fsPath;
+        //     let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        //     let relativePath = path.relative(rootPath, fsPath)
+        //     await treeview.reveal(
+        //         {fspath: relativePath, type:vscode.FileType.Directory, line_no:0},
+        //         {focus: true, select: false, expand: true})
+        // }
     }),
-    vscode.window.onDidChangeTextEditorSelection ( e => {
+    vscode.window.onDidChangeTextEditorSelection (async e => {
         if (treeview.visible) {
             const editor = vscode.window.activeTextEditor;
             if (editor)
@@ -209,7 +211,7 @@ export const activate = (context: vscode.ExtensionContext) => {
                 const line_no = e.selections[0].start.line + 1;
                 let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
                 let relativePath = path.relative(rootPath, fsPath)
-                treeview.reveal(
+                await treeview.reveal(
                     {fspath: relativePath, type:vscode.FileType.File, line_no:line_no},
                     {focus: true, select: false, expand: true})
             }
@@ -220,7 +222,8 @@ export const activate = (context: vscode.ExtensionContext) => {
     vscode.workspace.onDidChangeConfiguration(async event => {}),
 
     vscode.commands.registerCommand("linenotecodelens.openNote", async (resource?: Entry) => {
-        if (resource.type && resource.type == vscode.FileType.File) {
+        if(resource && (resource.type == LineNoteEntryType.Note ||
+            resource.type == LineNoteEntryType.StarNote)) {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             let full_path = path.join(rootPath, resource.fspath);
             let uri = vscode.Uri.parse(linenoteScheme + ':/' + full_path + "_L" + resource.line_no);
@@ -253,7 +256,8 @@ export const activate = (context: vscode.ExtensionContext) => {
     }),
 
     vscode.commands.registerCommand("linenotecodelens.removeNote", async (resource?: Entry) => {
-        if (resource.type && resource.type == vscode.FileType.File) {
+        if(resource && (resource.type == LineNoteEntryType.Note ||
+            resource.type == LineNoteEntryType.StarNote)) {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             let full_path = path.join(rootPath, resource.fspath);
             let uri = vscode.Uri.parse(linenoteScheme + ':/' + full_path + "_L" + resource.line_no);
@@ -291,7 +295,8 @@ export const activate = (context: vscode.ExtensionContext) => {
         let fsPath:string;
         let from:number;
         let to:number;
-        if (resource.type && resource.type == vscode.FileType.File)
+        if(resource && (resource.type == LineNoteEntryType.Note ||
+            resource.type == LineNoteEntryType.StarNote))
         {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             fsPath = path.join(rootPath, resource.fspath);
@@ -386,7 +391,8 @@ export const activate = (context: vscode.ExtensionContext) => {
         let fsPath:string;
         let from:number;
         let to:number;
-        if (resource.type && resource.type == vscode.FileType.File)
+        if(resource && (resource.type == LineNoteEntryType.Note ||
+            resource.type == LineNoteEntryType.StarNote))
         {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             fsPath = path.join(rootPath, resource.fspath);
@@ -451,6 +457,10 @@ export const activate = (context: vscode.ExtensionContext) => {
             `Successfully move single note from line ${from} to line ${to}.`)
     }),
     vscode.commands.registerCommand("linenotecodelens.gotoline", async (fspath:string, line: number) => {
+        if(!fs.statSync(fspath))
+        {
+            return;
+        }
         let uri = vscode.Uri.parse("file://" + fspath);
         await vscode.window.showTextDocument(uri);
         const editor = vscode.window.activeTextEditor;
@@ -463,6 +473,44 @@ export const activate = (context: vscode.ExtensionContext) => {
     }),
     vscode.commands.registerCommand("linenotecodelens.treeview_refresh", async () => {
         treeViewProvider._onDidChangeTreeData.fire()
+    }),
+    vscode.commands.registerCommand("linenotecodelens.starNote", async (resource?: Entry) => {
+        if(resource && (resource.type == LineNoteEntryType.Note ||
+                        resource.type == LineNoteEntryType.StarNote))
+        {
+            let db = await getDB()
+            if(!db) {
+                return;
+            }
+            let result = await db.get(
+                "SELECT star from linenote_notes WHERE fspath = ? \
+                AND line_no = ?",
+                resource.fspath,
+                resource.line_no
+            )
+            if(result)
+            {
+                if(result.star == 1)
+                {
+                    await db.run(
+                        "UPDATE linenote_notes SET star = 0 \
+                        WHERE fspath = ? AND line_no = ?",
+                        resource.fspath,
+                        resource.line_no
+                    )
+                }
+                else
+                {
+                    await db.run(
+                        "UPDATE linenote_notes SET star = 1 \
+                        WHERE fspath = ? AND line_no = ?",
+                        resource.fspath,
+                        resource.line_no
+                    )
+                }
+                treeViewProvider._onDidChangeTreeData.fire()
+            }
+        }
     }),
   );
 };

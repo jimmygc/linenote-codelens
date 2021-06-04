@@ -51,6 +51,11 @@
 				"command": "linenotecodelens.treeview_refresh",
 				"title": "Line Note: Refresh",
 				"icon": "$(refresh)"
+			},
+			{
+				"command": "linenotecodelens.starNote",
+				"title": "Line Note: Star note",
+				"icon": "$(star)"
 			}
 		],
 		"menus": {
@@ -65,20 +70,25 @@
                 {
                     "command": "linenotecodelens.removeNote",
                     "when": "view == LinenoteExplorer && viewItem == note",
-                    "group": "inline@4"
+                    "group": "inline@5"
                 },
                 {
                     "command": "linenotecodelens.moveNoteAndSubsequential",
                     "when": "view == LinenoteExplorer && viewItem == note",
-                    "group": "inline@3"
+                    "group": "inline@4"
                 },
                 {
                     "command": "linenotecodelens.moveSingleNote",
                     "when": "view == LinenoteExplorer && viewItem == note",
-                    "group": "inline@2"
+                    "group": "inline@3"
                 },
                 {
                     "command": "linenotecodelens.openNote",
+                    "when": "view == LinenoteExplorer && viewItem == note",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "linenotecodelens.starNote",
                     "when": "view == LinenoteExplorer && viewItem == note",
                     "group": "inline@1"
                 }
