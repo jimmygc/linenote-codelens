@@ -389,15 +389,14 @@ export const activate = async (context: vscode.ExtensionContext) => {
 		for(let row of results) {
 			let from = row.line_no;
 			let to  = row.line_no + line_no;
-			let from_url = linenoteScheme + ':' + fsPath + "_L" + from;
-			let to_url = linenoteScheme + ':' + fsPath + "_L" + to;
-			let source_content = await vscode.workspace.fs.readFile(vscode.Uri.parse(from_url));
-			if(!source_content.toString())
-			{
-				continue;
-			}
-			await vscode.workspace.fs.writeFile(vscode.Uri.parse(to_url), source_content);
-			await vscode.workspace.fs.delete(vscode.Uri.parse(from_url));
+            if (!row.note_content)
+            {
+                continue
+            }
+			await db.run(
+                "UPDATE linenote_notes SET line_no = ? \
+                WHERE fspath = ? AND line_no = ?",
+                to, relativePath, from)
 		}
 		codelensProvider._onDidChangeCodeLenses.fire();
         treeViewProvider._onDidChangeTreeData.fire();
