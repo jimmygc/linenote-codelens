@@ -51,12 +51,16 @@ export class LineNoteStarEntry extends vscode.TreeItem {
 
 export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
 	private db :sqlite.Database;
-	public _onDidChangeTreeData: vscode.EventEmitter<any> = new vscode.EventEmitter<any>();
+	private _onDidChangeTreeData: vscode.EventEmitter<any> = new vscode.EventEmitter<any>();
 	readonly onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
 
 	private async init(): Promise<void> {
 		this.db = await getDB();
 	}
+
+    public refresh(): void {
+        this._onDidChangeTreeData.fire();
+    }
 
     async getTreeItem(element: Entry): Promise<vscode.TreeItem> {
         await this.init();
@@ -86,7 +90,9 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         else
         {
             let full_path = path.join(rootPath, element.fspath);
-            let row = await this.db.get("SELECT * FROM linenote_notes where fspath = ? AND line_no = ?", element.fspath, element.line_no);
+            let row = await this.db.get(
+                "SELECT * FROM linenote_notes where fspath = ? AND line_no = ?",
+                element.fspath, element.line_no);
             if (row) {
                 if (row.star == 1)
                 {
@@ -160,7 +166,8 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
                 }
             )
 
-            let results = await this.db.all("SELECT DISTINCT fspath FROM linenote_notes");
+            let results = await this.db.all(
+                "SELECT DISTINCT fspath FROM linenote_notes");
             if (results)
             {
                 for (let row of results)
@@ -196,7 +203,8 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         else if (element.type == LineNoteEntryType.File) {
             let children:Entry[] = [];
             let results = await this.db.all(
-                "SELECT * FROM linenote_notes where fspath = ?", element.fspath);
+                "SELECT * FROM linenote_notes where fspath = ?",
+                element.fspath);
             if (results)
             {
                 for (let row of results)

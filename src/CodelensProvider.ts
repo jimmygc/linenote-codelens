@@ -9,13 +9,19 @@ import { getDB } from "./db";
 export class CodelensProvider implements vscode.CodeLensProvider {
 
     private codeLenses: vscode.CodeLens[] = [];
-    public _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
-    public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
+    private _onDidChangeCodeLenses: vscode.EventEmitter<void> =
+        new vscode.EventEmitter<void>();
+    public readonly onDidChangeCodeLenses: vscode.Event<void> =
+        this._onDidChangeCodeLenses.event;
 	private db :sqlite.Database;
 
 	private async init(rootPath :string): Promise<void> {
 		this.db = await getDB();
 	}
+
+    public refresh(): void {
+        this._onDidChangeCodeLenses.fire();
+    }
 
 	async generateCodelens(editor: vscode.TextEditor, fsPath: string) {
 		let codeLenses: vscode.CodeLens[] = []
@@ -31,7 +37,9 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 			throw new Error("invalid file path");
 		}
 
-		let results = await this.db.all("SELECT * FROM linenote_notes WHERE fspath = ?", relativePath);
+		let results = await this.db.all(
+            "SELECT * FROM linenote_notes WHERE fspath = ?",
+            relativePath);
 		if (results)
 		{
 			for (let row of results)
@@ -60,7 +68,8 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 		return codeLenses;
 	}
 
-    public async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
+    public async provideCodeLenses(document: vscode.TextDocument,
+            token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
 		const editor = vscode.window.activeTextEditor;
 		const fsPath = editor.document.uri.fsPath;
 		this.codeLenses = []
