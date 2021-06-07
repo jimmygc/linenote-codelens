@@ -28,10 +28,14 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 		let codeLenses: vscode.CodeLens[] = []
 		const projectRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		const reportedLines: number[] = []
+        await this.init()
+        if (!this.db)
+        {
+            return codeLenses;
+        }
 		if (!projectRoot) {
 			return codeLenses
 		}
-		await this.init()
 		const relativePath = path.relative(projectRoot, fsPath);
         if (!relativePath ||
                 relativePath.startsWith("..") ||
