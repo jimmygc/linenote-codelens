@@ -3,7 +3,7 @@
 	"repository": "https://github.com/jimmygc/linenote-codelens.git",
 	"displayName": "Note Line in Codelens",
 	"description": "note line in codelens",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"publisher": "jimmygc",
 	"engines": {
 		"vscode": "^1.26.0"
