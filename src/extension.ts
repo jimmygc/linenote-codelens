@@ -30,7 +30,7 @@ class File implements vscode.FileStat {
 
 export const activate = async (context: vscode.ExtensionContext) => {
   let disposed: boolean = false;
-  await getDB()
+  await getDB();
 
   const codelensProvider = new CodelensProvider();
   vscode.languages.registerCodeLensProvider("*", codelensProvider);
@@ -50,6 +50,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
 	private uri2path_lineno(uri: vscode.Uri) : [string, string, Number]{
 		let full_path = uri.toString().replace(
             new RegExp("^" + linenoteScheme + ":"), "");
+        console.debug("fffffff full_path =" + full_path);
 		let index = full_path.lastIndexOf("_L");
 		if(index == -1) {
 			throw new Error(`path ${full_path} is invalid`)
@@ -283,7 +284,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 let relativePath = path.relative(rootPath, fsPath);
                 if (!relativePath ||
                         relativePath.startsWith("..") ||
-                        !path.isAbsolute(relativePath)) {
+                        path.isAbsolute(relativePath)) {
                     vscode.window.showErrorMessage(
                         `File ${fsPath} is not in first workspace.`)
                     return;

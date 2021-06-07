@@ -16,7 +16,7 @@ export class CodelensProvider implements vscode.CodeLensProvider {
         this._onDidChangeCodeLenses.event;
 	private db :sqlite.Database;
 
-	private async init(rootPath :string): Promise<void> {
+	private async init(): Promise<void> {
 		this.db = await getDB();
 	}
 
@@ -31,11 +31,11 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 		if (!projectRoot) {
 			return codeLenses
 		}
-		await this.init(projectRoot)
+		await this.init()
 		const relativePath = path.relative(projectRoot, fsPath);
         if (!relativePath ||
                 relativePath.startsWith("..") ||
-                !path.isAbsolute(relativePath)) {
+                path.isAbsolute(relativePath)) {
 			return codeLenses;
 		}
 
