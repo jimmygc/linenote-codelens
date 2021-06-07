@@ -274,7 +274,9 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 uri = linenoteUrlFromFsPath(full_path, resource.line_no);
             } catch(e)
             {
-                return;
+                vscode.window.showErrorMessage(
+                    "Linenote: Only files in first working folder is supported");
+                    return;
             }
             console.log("open node: " + uri);
             let doc = await vscode.workspace.openTextDocument(uri);
@@ -294,6 +296,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 try {
                     uri = linenoteUrlFromFsPath(fsPath, from);
                 } catch(e) {
+                    vscode.window.showErrorMessage(
+                        "Linenote: Only files in first working folder is supported");
                     return;
                 }
                 console.info(`uri = ${uri}`);
