@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as sqlite from 'sqlite';
 import * as path from "path";
 import { getDB } from "./db";
+import { linenoteBaseUri } from "./consts"
 
 /**
  * CodelensProvider
@@ -25,7 +26,6 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 
 	async generateCodelens(editor: vscode.TextEditor, fsPath: string) {
 		let codeLenses: vscode.CodeLens[] = []
-		const linenoteScheme = 'linenote';
 		const projectRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		const reportedLines: number[] = []
 		if (!projectRoot) {
@@ -33,8 +33,10 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 		}
 		await this.init(projectRoot)
 		const relativePath = path.relative(projectRoot, fsPath);
-		if (relativePath.startsWith("..")) {
-			throw new Error("invalid file path");
+        if (!relativePath ||
+                relativePath.startsWith("..") ||
+                !path.isAbsolute(relativePath)) {
+			return codeLenses;
 		}
 
 		let results = await this.db.all(
@@ -52,7 +54,7 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 				let from = editor.document.lineAt(row.line_no - 1).range.start;
 				let to = editor.document.lineAt(row.line_no - 1).range.end;
 				let range = new vscode.Range(from, to);
-				let url = linenoteScheme + ':' + fsPath + "_L" + row.line_no;
+				let url = linenoteBaseUri + fsPath + "_L" + row.line_no;
 				let c: vscode.Command = {
 					title: row.note_content,
 					command: "vscode.open",

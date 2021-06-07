@@ -5,7 +5,7 @@ import { NoteTreeProvider, Entry, LineNoteEntryType } from './TreeViewProvider';
 import * as path from "path";
 import { getDB } from "./db";
 import * as fs from 'fs';
-
+import { linenoteScheme, linenoteBaseUri } from "./consts"
 
 let disposables: vscode.Disposable[] = [];
 
@@ -39,8 +39,6 @@ export const activate = async (context: vscode.ExtensionContext) => {
   let treeview = vscode.window.createTreeView(
       'LinenoteExplorer',
       { treeDataProvider: treeViewProvider, showCollapseAll: true});
-
-  const linenoteScheme = 'linenote';
 
   class linenoteFS implements vscode.FileSystemProvider {
 
@@ -79,7 +77,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
 	async readFile(uri: vscode.Uri): Promise<Uint8Array> {
 		let [rootPath, fsPath, line_no] = this.uri2path_lineno(uri);
 		await this.init(rootPath);
-		console.debug("readFile: " + fsPath);
+        console.debug(`uri = ${uri}`);
+		console.debug(`readFile: ${fsPath}_${line_no}`);
 		const res = await this.db.get(
             "SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?",
             fsPath, line_no)
@@ -243,7 +242,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 const line_no = e.selections[0].start.line + 1;
                 let relativePath = path.relative(rootPath, fsPath)
                 let uri = vscode.Uri.parse(
-                    linenoteScheme + ':/' + fsPath + "_L" + line_no);
+                    linenoteBaseUri + fsPath + "_L" + line_no);
                 let content = await vscode.workspace.fs.readFile(uri);
                 if(content.toString())
                 {
@@ -266,7 +265,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             let full_path = path.join(rootPath, resource.fspath);
             let uri = vscode.Uri.parse(
-                linenoteScheme + ':/' + full_path + "_L" + resource.line_no);
+                linenoteBaseUri + full_path + "_L" + resource.line_no);
             console.log("delete node: " + uri);
             let doc = await vscode.workspace.openTextDocument(uri);
             await vscode.window.showTextDocument(doc,
@@ -280,9 +279,18 @@ export const activate = async (context: vscode.ExtensionContext) => {
             const editor = vscode.window.activeTextEditor;
             if (editor) {
                 const fsPath = editor.document.uri.fsPath;
+                let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+                let relativePath = path.relative(rootPath, fsPath);
+                if (!relativePath ||
+                        relativePath.startsWith("..") ||
+                        !path.isAbsolute(relativePath)) {
+                    vscode.window.showErrorMessage(
+                        `File ${fsPath} is not in first workspace.`)
+                    return;
+                }
                 const [from, _] = getSelectionLineRange(editor);
                 let uri = vscode.Uri.parse(
-                    linenoteScheme + ':/' + fsPath + "_L" + from);
+                    linenoteBaseUri + fsPath + "_L" + from);
                 let doc :vscode.TextDocument;
                 doc = await vscode.workspace.openTextDocument(uri);
                 await vscode.window.showTextDocument(doc,
@@ -303,7 +311,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             let full_path = path.join(rootPath, resource.fspath);
             let uri = vscode.Uri.parse(
-                linenoteScheme + ':/' + full_path + "_L" + resource.line_no);
+                linenoteBaseUri + full_path + "_L" + resource.line_no);
             console.log("delete node: " + uri);
             await vscode.workspace.fs.delete(uri, {useTrash: false});
             codelensProvider.refresh();
@@ -315,7 +323,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
             if (editor) {
                 const fsPath = editor.document.uri.fsPath;
                 const [from, _] = getSelectionLineRange(editor);
-                let url = linenoteScheme + ':/' + fsPath + "_L" + from;
+                let url = linenoteBaseUri + fsPath + "_L" + from;
                 let note_content =
                     await vscode.workspace.fs.readFile(vscode.Uri.parse(url));
                 if(!note_content.toString()) {
@@ -392,8 +400,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
             return
         }
 		let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-		let db = await getDB();
 		let relativePath = path.relative(rootPath, fsPath);
+		let db = await getDB();
 		let results = await db.all(
             "SELECT * FROM linenote_notes WHERE fspath = ? and line_no >= ?",
             relativePath, from);
@@ -492,29 +500,13 @@ export const activate = async (context: vscode.ExtensionContext) => {
             }
             fsPath = editor.document.uri.fsPath;
         }
-		var from_url = linenoteScheme + ':' + fsPath + "_L" + from;
-		var to_url = linenoteScheme + ':' + fsPath + "_L" + to;
-		let source_content = await vscode.workspace.fs.readFile(
-            vscode.Uri.parse(from_url));
-		if(!source_content.toString())
-		{
-			return;
-		}
-		let target_content = await vscode.workspace.fs.readFile(
-            vscode.Uri.parse(to_url));
-		if(target_content.toString())
-		{
-			let selection = await vscode.window.showInformationMessage(
-                `Overwrite note on line ${to}?`, `Yes`, `No`);
-			if(selection.toLowerCase() != "yes")
-			{
-				return
-			}
-		}
-		console.debug("Move note from " + from_url + " to " + to_url);
-		await vscode.workspace.fs.writeFile(
-            vscode.Uri.parse(to_url), source_content);
-		await vscode.workspace.fs.delete(vscode.Uri.parse(from_url));
+		let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+		let db = await getDB();
+		let relativePath = path.relative(rootPath, fsPath);
+        await db.run(
+            "UPDATE linenote_notes SET line_no = ? \
+            WHERE fspath = ? AND line_no = ?",
+            to, relativePath, from)
 		codelensProvider.refresh();
         treeViewProvider.refresh();
 		vscode.window.showInformationMessage(
