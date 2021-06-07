@@ -27,6 +27,12 @@
 				}
 			]
 		},
+        "viewsWelcome": [
+            {
+              "view": "LinenoteExplorer",
+              "contents": "No notes found."
+            }
+        ],
 		"commands": [
 			{
 				"command": "linenotecodelens.openNote",
