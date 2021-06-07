@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as sqlite from 'sqlite';
-import * as path from "path";
 import { getDB } from "./db";
-import { linenoteBaseUri } from "./consts"
+import { linenoteUrlFromFsPath, linenoteFullPath2RelativePath } from "./util"
 
 /**
  * CodelensProvider
@@ -36,12 +35,7 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 		if (!projectRoot) {
 			return codeLenses
 		}
-		const relativePath = path.relative(projectRoot, fsPath);
-        if (!relativePath ||
-                relativePath.startsWith("..") ||
-                path.isAbsolute(relativePath)) {
-			return codeLenses;
-		}
+		const relativePath = linenoteFullPath2RelativePath(fsPath);
 
 		let results = await this.db.all(
             "SELECT * FROM linenote_notes WHERE fspath = ?",
@@ -58,11 +52,11 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 				let from = editor.document.lineAt(row.line_no - 1).range.start;
 				let to = editor.document.lineAt(row.line_no - 1).range.end;
 				let range = new vscode.Range(from, to);
-				let url = linenoteBaseUri + fsPath + "_L" + row.line_no;
+				let uri = linenoteUrlFromFsPath(fsPath, row.line_no);
 				let c: vscode.Command = {
 					title: row.note_content,
 					command: "vscode.open",
-					arguments: [vscode.Uri.parse(url),
+					arguments: [uri,
 						{
 						  viewColumn: vscode.ViewColumn.Beside,
 						  preview: false

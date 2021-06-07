@@ -21,7 +21,12 @@ export const getDB = async () :Promise<sqlite.Database<sqlite3.Database, sqlite3
 		{
 			await db.close();
 		}
-		let db_path = path.join(rootPath, ".vscode", "linenote.db")
+        let db_dir = path.join(rootPath, ".vscode");
+        if(!fs.existsSync(db_dir))
+        {
+            fs.mkdirSync(db_dir)
+        }
+		let db_path = path.join(db_dir, "linenote.db")
 		console.info(`db_path = ${db_path}`);
 		db = await sqlite.open({
 			filename: db_path,

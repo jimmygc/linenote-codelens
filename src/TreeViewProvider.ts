@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import * as sqlite from 'sqlite';
 import { getDB } from "./db";
 import * as path from "path";
+import { linenoteRelativePath2FullPath } from "./util"
+
 
 export enum LineNoteEntryType {
     File = 1,
@@ -68,7 +70,6 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         {
             return null;
         }
-        let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
         let treeItem:vscode.TreeItem;
         if(element.type == LineNoteEntryType.File)
         {
@@ -89,7 +90,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         }
         else
         {
-            let full_path = path.join(rootPath, element.fspath);
+            let full_path = linenoteRelativePath2FullPath(element.fspath);
             let row = await this.db.get(
                 "SELECT * FROM linenote_notes where fspath = ? AND line_no = ?",
                 element.fspath, element.line_no);

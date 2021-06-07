@@ -5,7 +5,8 @@ import { NoteTreeProvider, Entry, LineNoteEntryType } from './TreeViewProvider';
 import * as path from "path";
 import { getDB } from "./db";
 import * as fs from 'fs';
-import { linenoteScheme, linenoteBaseUri } from "./consts"
+import { linenoteScheme } from "./consts"
+import { linenoteUrlFromFsPath, linenoteFullPath2RelativePath, linenoteRelativePath2FullPath } from "./util"
 
 let disposables: vscode.Disposable[] = [];
 
@@ -47,26 +48,23 @@ export const activate = async (context: vscode.ExtensionContext) => {
         this._emitter.event;
 	private db :sqlite.Database;
 
-	private uri2path_lineno(uri: vscode.Uri) : [string, string, Number]{
-		let full_path = uri.toString().replace(
-            new RegExp("^" + linenoteScheme + ":"), "");
-        console.debug("fffffff full_path =" + full_path);
-		let index = full_path.lastIndexOf("_L");
+	private uri2path_lineno(uri: vscode.Uri) : [string, Number]{
+		let relativePath = uri.toString().replace(
+            new RegExp("^" + linenoteScheme + ":/"), "");
+		let index = relativePath.lastIndexOf("_L");
 		if(index == -1) {
-			throw new Error(`path ${full_path} is invalid`)
+			throw new Error(`path ${relativePath} is invalid`)
 		}
-		let fsPath = full_path.slice(0, index);
-		let line_no = parseInt(full_path.slice(index + 2))
+		let line_no = parseInt(relativePath.slice(index + 2))
 		if(isNaN(line_no))
 		{
-			throw new Error(`${full_path.slice(index + 2)} is not a number`)
+			throw new Error(`${relativePath.slice(index + 2)} is not a number`)
 		}
-		let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-		let relativePath = path.relative(rootPath, fsPath);
-		return [rootPath, relativePath, line_no]
+        relativePath = relativePath.slice(0, index);
+		return [relativePath, line_no]
 	}
 
-	private async init(rootPath :string): Promise<void> {
+	private async init(): Promise<void> {
 		this.db = await getDB();
 	}
 
@@ -76,8 +74,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
     }
 
 	async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-		let [rootPath, fsPath, line_no] = this.uri2path_lineno(uri);
-		await this.init(rootPath);
+		let [fsPath, line_no] = this.uri2path_lineno(uri);
+		await this.init();
         console.debug(`uri = ${uri}`);
 		console.debug(`readFile: ${fsPath}_${line_no}`);
 		const res = await this.db.get(
@@ -99,8 +97,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
     }
 	async writeFile(uri: vscode.Uri, content: Uint8Array,
             options: { create: boolean, overwrite: boolean }): Promise<void> {
-		let [rootPath, fsPath, line_no] = this.uri2path_lineno(uri);
-		await this.init(rootPath);
+		let [fsPath, line_no] = this.uri2path_lineno(uri);
+		await this.init();
 		console.debug("writing file " + uri+ " :" + content.toString());
 		const res = await this.db.get(
             "SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?",
@@ -124,8 +122,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
 	createDirectory(uri: vscode.Uri): void {}
 	readDirectory(uri: vscode.Uri): [string, vscode.FileType][] { return [] }
 	async delete(uri: vscode.Uri): Promise<void> {
-		let [rootPath, fsPath, line_no] = this.uri2path_lineno(uri);
-		await this.init(rootPath);
+		let [fsPath, line_no] = this.uri2path_lineno(uri);
+		await this.init();
 		console.debug("deleting file " + fsPath);
 		await this.db.run(
             "DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?",
@@ -134,9 +132,9 @@ export const activate = async (context: vscode.ExtensionContext) => {
 	}
 	async rename(oldUri: vscode.Uri, newUri: vscode.Uri,
                  options: { overwrite: boolean }): Promise<void> {
-		let [root_path, from_path, from_lineno] = this.uri2path_lineno(oldUri);
-		let [_, to_path, to_lineno] = this.uri2path_lineno(newUri);
-		await this.init(root_path);
+		let [from_path, from_lineno] = this.uri2path_lineno(oldUri);
+		let [to_path, to_lineno] = this.uri2path_lineno(newUri);
+		await this.init();
 		console.debug(`rename file: ${from_path}:${from_lineno} to \
                       ${to_path}:${to_lineno}`);
 		const res = await this.db.get(
@@ -172,7 +170,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
 	let db = await getDB();
 	let results = await db.all("SELECT DISTINCT fspath FROM linenote_notes");
 	for(let row of results) {
-		let fullPath = path.join(rootPath, row.fspath);
+		let fullPath = linenoteRelativePath2FullPath(row.fspath);
+        console.debug("autodelete path = " + fullPath);
 		if(!fs.existsSync(fullPath)) {
 			console.debug(`auto deleted fullPath = ${fullPath}`);
 			db.run("DELETE FROM linenote_notes WHERE fspath = ?", row.fspath)
@@ -239,14 +238,14 @@ export const activate = async (context: vscode.ExtensionContext) => {
             if (editor)
             {
                 const fsPath = editor.document.uri.fsPath;
-                let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
                 const line_no = e.selections[0].start.line + 1;
-                let relativePath = path.relative(rootPath, fsPath)
-                let uri = vscode.Uri.parse(
-                    linenoteBaseUri + fsPath + "_L" + line_no);
+                let relativePath = linenoteFullPath2RelativePath(fsPath);
+                let uri = linenoteUrlFromFsPath(fsPath, line_no);
                 let content = await vscode.workspace.fs.readFile(uri);
+                // console.debug("on select: relativePath=" + relativePath);
                 if(content.toString())
                 {
+                    // console.debug("on select: reveal relativePath=" + relativePath);
                     treeview.reveal(
                         {fspath: relativePath,
                          type:LineNoteEntryType.Note, line_no:line_no},
@@ -265,9 +264,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
             resource.type == LineNoteEntryType.StarNote)) {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             let full_path = path.join(rootPath, resource.fspath);
-            let uri = vscode.Uri.parse(
-                linenoteBaseUri + full_path + "_L" + resource.line_no);
-            console.log("delete node: " + uri);
+            let uri = linenoteUrlFromFsPath(full_path, resource.line_no);
+            console.log("open node: " + uri);
             let doc = await vscode.workspace.openTextDocument(uri);
             await vscode.window.showTextDocument(doc,
                 {
@@ -280,18 +278,9 @@ export const activate = async (context: vscode.ExtensionContext) => {
             const editor = vscode.window.activeTextEditor;
             if (editor) {
                 const fsPath = editor.document.uri.fsPath;
-                let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-                let relativePath = path.relative(rootPath, fsPath);
-                if (!relativePath ||
-                        relativePath.startsWith("..") ||
-                        path.isAbsolute(relativePath)) {
-                    vscode.window.showErrorMessage(
-                        `File ${fsPath} is not in first workspace.`)
-                    return;
-                }
                 const [from, _] = getSelectionLineRange(editor);
-                let uri = vscode.Uri.parse(
-                    linenoteBaseUri + fsPath + "_L" + from);
+                let uri = linenoteUrlFromFsPath(fsPath, from);
+                console.info(`uri = ${uri}`);
                 let doc :vscode.TextDocument;
                 doc = await vscode.workspace.openTextDocument(uri);
                 await vscode.window.showTextDocument(doc,
@@ -311,8 +300,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
             resource.type == LineNoteEntryType.StarNote)) {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             let full_path = path.join(rootPath, resource.fspath);
-            let uri = vscode.Uri.parse(
-                linenoteBaseUri + full_path + "_L" + resource.line_no);
+            let uri = linenoteUrlFromFsPath(full_path, resource.line_no)
             console.log("delete node: " + uri);
             await vscode.workspace.fs.delete(uri, {useTrash: false});
             codelensProvider.refresh();
@@ -324,9 +312,9 @@ export const activate = async (context: vscode.ExtensionContext) => {
             if (editor) {
                 const fsPath = editor.document.uri.fsPath;
                 const [from, _] = getSelectionLineRange(editor);
-                let url = linenoteBaseUri + fsPath + "_L" + from;
+                let url = linenoteUrlFromFsPath(fsPath, from);
                 let note_content =
-                    await vscode.workspace.fs.readFile(vscode.Uri.parse(url));
+                    await vscode.workspace.fs.readFile(url);
                 if(!note_content.toString()) {
                     return;
                 }
@@ -337,7 +325,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
                     return
                 }
                 await vscode.workspace.fs.delete(
-                    vscode.Uri.parse(url), {useTrash: false});
+                    url, {useTrash: false});
                 codelensProvider.refresh();
                 treeViewProvider.refresh();
                 vscode.window.showInformationMessage(
@@ -400,8 +388,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
         {
             return
         }
-		let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-		let relativePath = path.relative(rootPath, fsPath);
+		let relativePath = linenoteFullPath2RelativePath(fsPath);
 		let db = await getDB();
 		let results = await db.all(
             "SELECT * FROM linenote_notes WHERE fspath = ? and line_no >= ?",
@@ -501,9 +488,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
             }
             fsPath = editor.document.uri.fsPath;
         }
-		let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		let db = await getDB();
-		let relativePath = path.relative(rootPath, fsPath);
+		let relativePath = linenoteFullPath2RelativePath(fsPath);
         await db.run(
             "UPDATE linenote_notes SET line_no = ? \
             WHERE fspath = ? AND line_no = ?",
@@ -515,11 +501,14 @@ export const activate = async (context: vscode.ExtensionContext) => {
     }),
     vscode.commands.registerCommand("linenotecodelens.gotoline",
             async (fspath:string, line: number) => {
+        console.debug("goto line fspath=" + fspath);
         if(!fs.statSync(fspath))
         {
             return;
         }
-        let uri = vscode.Uri.parse("file://" + fspath);
+
+        let uri = vscode.Uri.parse(
+            (fspath.startsWith("/") ? "file://": "file:/") + fspath);
         await vscode.window.showTextDocument(uri);
         const editor = vscode.window.activeTextEditor;
         if(!editor)

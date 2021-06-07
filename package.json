@@ -14,39 +14,39 @@
 	"activationEvents": [
 		"*"
 	],
-    "icon": "resources/bookmark_star.png",
+	"icon": "resources/bookmark_star.png",
 	"main": "./out/extension",
 	"contributes": {
-        "views": {
-            "explorer": [
-              {
-                "id": "LinenoteExplorer",
-                "name": "Linenote Explorer",
-                "icon": "$(notebook)",
-                "contextualTitle": "Linenote Explorer"
-              }
-            ]
-        },
+		"views": {
+			"explorer": [
+				{
+					"id": "LinenoteExplorer",
+					"name": "Linenote Explorer",
+					"icon": "$(notebook)",
+					"contextualTitle": "Linenote Explorer"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "linenotecodelens.openNote",
 				"title": "Line Note: Open note",
-                "icon": "$(edit)"
+				"icon": "$(edit)"
 			},
 			{
 				"command": "linenotecodelens.removeNote",
 				"title": "Line Note: Delete note",
-                "icon": "$(close)"
+				"icon": "$(close)"
 			},
 			{
 				"command": "linenotecodelens.moveSingleNote",
 				"title": "Line Note: Move single note",
-                "icon": "$(gear)"
+				"icon": "$(gear)"
 			},
 			{
 				"command": "linenotecodelens.moveNoteAndSubsequential",
 				"title": "Line Note: Move all notes under",
-                "icon": "$(arrow-down)"
+				"icon": "$(arrow-down)"
 			},
 			{
 				"command": "linenotecodelens.treeview_refresh",
@@ -60,50 +60,50 @@
 			}
 		],
 		"menus": {
-            "view/title": [
-                {
-                    "command": "linenotecodelens.treeview_refresh",
-                    "when": "view == LinenoteExplorer",
-                    "group": "navigation@1"
-                }
-            ],
-            "view/item/context": [
-                {
-                    "command": "linenotecodelens.removeNote",
-                    "when": "view == LinenoteExplorer && viewItem == note",
-                    "group": "inline@5"
-                },
-                {
-                    "command": "linenotecodelens.moveNoteAndSubsequential",
-                    "when": "view == LinenoteExplorer && viewItem == note",
-                    "group": "inline@4"
-                },
-                {
-                    "command": "linenotecodelens.moveSingleNote",
-                    "when": "view == LinenoteExplorer && viewItem == note",
-                    "group": "inline@3"
-                },
-                {
-                    "command": "linenotecodelens.openNote",
-                    "when": "view == LinenoteExplorer && viewItem == note",
-                    "group": "inline@2"
-                },
-                {
-                    "command": "linenotecodelens.starNote",
-                    "when": "view == LinenoteExplorer && viewItem == note",
-                    "group": "inline@1"
-                }
-            ],
-            "editor/context" : [
+			"view/title": [
+				{
+					"command": "linenotecodelens.treeview_refresh",
+					"when": "view == LinenoteExplorer",
+					"group": "navigation@1"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "linenotecodelens.removeNote",
+					"when": "view == LinenoteExplorer && viewItem == note",
+					"group": "inline@5"
+				},
+				{
+					"command": "linenotecodelens.moveNoteAndSubsequential",
+					"when": "view == LinenoteExplorer && viewItem == note",
+					"group": "inline@4"
+				},
+				{
+					"command": "linenotecodelens.moveSingleNote",
+					"when": "view == LinenoteExplorer && viewItem == note",
+					"group": "inline@3"
+				},
+				{
+					"command": "linenotecodelens.openNote",
+					"when": "view == LinenoteExplorer && viewItem == note",
+					"group": "inline@2"
+				},
+				{
+					"command": "linenotecodelens.starNote",
+					"when": "view == LinenoteExplorer && viewItem == note",
+					"group": "inline@1"
+				}
+			],
+			"editor/context": [
 				{
 					"command": "linenotecodelens.openNote",
 					"group": "linenote@1"
 				},
-                {
-                    "submenu": "linenote.editor.context",
-                    "group": "linenote@2"
-                }
-            ],
+				{
+					"submenu": "linenote.editor.context",
+					"group": "linenote@2"
+				}
+			],
 			"linenote.editor.context": [
 				{
 					"command": "linenotecodelens.removeNote",
@@ -119,12 +119,12 @@
 				}
 			]
 		},
-        "submenus": [
-            {
-                "id": "linenote.editor.context",
-                "label": "Line Note"
-            }
-        ],
+		"submenus": [
+			{
+				"id": "linenote.editor.context",
+				"label": "Line Note"
+			}
+		],
 		"configuration": {
 			"properties": {}
 		}
