@@ -14,7 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: npm install
+
       - uses: lannonbr/vsce-action@master
         with:
           args: "package"
 
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: development build
+          path: |
+             *.vsix
