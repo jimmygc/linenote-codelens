@@ -240,7 +240,12 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 const fsPath = editor.document.uri.fsPath;
                 const line_no = e.selections[0].start.line + 1;
                 let relativePath = linenoteFullPath2RelativePath(fsPath);
-                let uri = linenoteUrlFromFsPath(fsPath, line_no);
+                let uri :vscode.Uri;
+                try {
+                    uri = linenoteUrlFromFsPath(fsPath, line_no);
+                } catch {
+                    return;
+                }
                 let content = await vscode.workspace.fs.readFile(uri);
                 // console.debug("on select: relativePath=" + relativePath);
                 if(content.toString())
@@ -264,7 +269,13 @@ export const activate = async (context: vscode.ExtensionContext) => {
             resource.type == LineNoteEntryType.StarNote)) {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             let full_path = path.join(rootPath, resource.fspath);
-            let uri = linenoteUrlFromFsPath(full_path, resource.line_no);
+            let uri :vscode.Uri;
+            try {
+                uri = linenoteUrlFromFsPath(full_path, resource.line_no);
+            } catch(e)
+            {
+                return;
+            }
             console.log("open node: " + uri);
             let doc = await vscode.workspace.openTextDocument(uri);
             await vscode.window.showTextDocument(doc,
@@ -279,7 +290,12 @@ export const activate = async (context: vscode.ExtensionContext) => {
             if (editor) {
                 const fsPath = editor.document.uri.fsPath;
                 const [from, _] = getSelectionLineRange(editor);
-                let uri = linenoteUrlFromFsPath(fsPath, from);
+                let uri :vscode.Uri;
+                try {
+                    uri = linenoteUrlFromFsPath(fsPath, from);
+                } catch(e) {
+                    return;
+                }
                 console.info(`uri = ${uri}`);
                 let doc :vscode.TextDocument;
                 doc = await vscode.workspace.openTextDocument(uri);
@@ -300,7 +316,12 @@ export const activate = async (context: vscode.ExtensionContext) => {
             resource.type == LineNoteEntryType.StarNote)) {
             let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
             let full_path = path.join(rootPath, resource.fspath);
-            let uri = linenoteUrlFromFsPath(full_path, resource.line_no)
+            let uri :vscode.Uri;
+            try {
+                uri = linenoteUrlFromFsPath(full_path, resource.line_no);
+            } catch(e) {
+                return;
+            }
             console.log("delete node: " + uri);
             await vscode.workspace.fs.delete(uri, {useTrash: false});
             codelensProvider.refresh();
@@ -312,7 +333,12 @@ export const activate = async (context: vscode.ExtensionContext) => {
             if (editor) {
                 const fsPath = editor.document.uri.fsPath;
                 const [from, _] = getSelectionLineRange(editor);
-                let url = linenoteUrlFromFsPath(fsPath, from);
+                let url :vscode.Uri;
+                try {
+                    url = linenoteUrlFromFsPath(fsPath, from);
+                } catch(e) {
+                    return;
+                }
                 let note_content =
                     await vscode.workspace.fs.readFile(url);
                 if(!note_content.toString()) {

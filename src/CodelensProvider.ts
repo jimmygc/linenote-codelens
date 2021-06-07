@@ -52,7 +52,12 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 				let from = editor.document.lineAt(row.line_no - 1).range.start;
 				let to = editor.document.lineAt(row.line_no - 1).range.end;
 				let range = new vscode.Range(from, to);
-				let uri = linenoteUrlFromFsPath(fsPath, row.line_no);
+                let uri :vscode.Uri;
+                try {
+				    uri = linenoteUrlFromFsPath(fsPath, row.line_no);
+                } catch (e) {
+                    continue;
+                }
 				let c: vscode.Command = {
 					title: row.note_content,
 					command: "vscode.open",
