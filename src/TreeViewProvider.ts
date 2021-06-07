@@ -182,61 +182,60 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
             }
             return children
         }
-        else if (element.type == LineNoteEntryType.StarDir) {
-            let children:Entry[] = [];
-            let results = await this.db.all(
-                "SELECT DISTINCT fspath FROM linenote_notes where star = 1");
-            if (results)
-            {
-                for (let row of results)
+        let children:Entry[] = [];
+        let results:any[];
+        switch(element.type)
+        {
+            case LineNoteEntryType.StarDir:
+                results = await this.db.all(
+                    "SELECT DISTINCT fspath FROM linenote_notes where star = 1");
+                if (results)
                 {
-                    let e :Entry = {
-                        fspath: row.fspath,
-                        type:LineNoteEntryType.StarFile,
-                        line_no: 0
+                    for (let row of results)
+                    {
+                        let e :Entry = {
+                            fspath: row.fspath,
+                            type:LineNoteEntryType.StarFile,
+                            line_no: 0
+                        }
+                        children.push(e)
                     }
-                    children.push(e)
                 }
-            }
-            return children;
-        }
-        else if (element.type == LineNoteEntryType.File) {
-            let children:Entry[] = [];
-            let results = await this.db.all(
-                "SELECT * FROM linenote_notes where fspath = ?",
-                element.fspath);
-            if (results)
-            {
-                for (let row of results)
+                return children;
+            case LineNoteEntryType.File:
+                results = await this.db.all(
+                    "SELECT * FROM linenote_notes where fspath = ?",
+                    element.fspath);
+                if (results)
                 {
-                    let e :Entry = {
-                        fspath: row.fspath,
-                        type:LineNoteEntryType.Note,
-                        line_no: row.line_no
+                    for (let row of results)
+                    {
+                        let e :Entry = {
+                            fspath: row.fspath,
+                            type:LineNoteEntryType.Note,
+                            line_no: row.line_no
+                        }
+                        children.push(e)
                     }
-                    children.push(e)
                 }
-            }
-            return children
-        }
-        else if (element.type == LineNoteEntryType.StarFile) {
-            let children:Entry[] = [];
-            let results = await this.db.all(
-                "SELECT * FROM linenote_notes WHERE star = 1 AND fspath = ?",
-                element.fspath);
-            if (results)
-            {
-                for (let row of results)
+                return children
+            case LineNoteEntryType.StarFile:
+                results = await this.db.all(
+                    "SELECT * FROM linenote_notes WHERE star = 1 AND fspath = ?",
+                    element.fspath);
+                if (results)
                 {
-                    let e :Entry = {
-                        fspath: row.fspath,
-                        type:LineNoteEntryType.StarNote,
-                        line_no: row.line_no
+                    for (let row of results)
+                    {
+                        let e :Entry = {
+                            fspath: row.fspath,
+                            type:LineNoteEntryType.StarNote,
+                            line_no: row.line_no
+                        }
+                        children.push(e)
                     }
-                    children.push(e)
                 }
-            }
-            return children;
+                return children;
         }
         return []
     }

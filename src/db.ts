@@ -52,23 +52,30 @@ export const getDB = async () :Promise<sqlite.Database<sqlite3.Database, sqlite3
         {
             console.info("migrate from version 0");
             fs.copyFileSync(db_path, db_path+".bak");
-            await db.exec("DROP TABLE IF EXISTS linenote_notes_migrate;");
-            await db.exec(" \
-                CREATE TABLE IF NOT EXISTS linenote_notes_migrate ( \
-                    id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                    fspath TEXT NOT NULL,  \
-                    line_no INTEGER NOT NULL, \
-                    note_content TEXT NOT NULL, \
-                    star INTEGER \
-                )");
-            await db.exec(" \
-                INSERT INTO linenote_notes_migrate(fspath, line_no, note_content) \
-                SELECT * FROM linenote_notes; \
-                ");
-            await db.exec("ALTER TABLE linenote_notes RENAME TO \
-                           linenote_notes_backup;");
-            await db.exec("ALTER TABLE linenote_notes_migrate RENAME TO \
-                           linenote_notes;");
+            await db.run("BEGIN TRANSACTION;");
+            try {
+                await db.exec("DROP TABLE IF EXISTS linenote_notes_migrate;");
+                await db.exec(" \
+                    CREATE TABLE IF NOT EXISTS linenote_notes_migrate ( \
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, \
+                        fspath TEXT NOT NULL,  \
+                        line_no INTEGER NOT NULL, \
+                        note_content TEXT NOT NULL, \
+                        star INTEGER \
+                    )");
+                await db.exec(" \
+                    INSERT INTO linenote_notes_migrate(fspath, line_no, note_content) \
+                    SELECT * FROM linenote_notes; \
+                    ");
+                await db.exec("ALTER TABLE linenote_notes RENAME TO \
+                            linenote_notes_backup;");
+                await db.exec("ALTER TABLE linenote_notes_migrate RENAME TO \
+                            linenote_notes;");
+            } catch(e) {
+                db.run("ROLLBACK;");
+                throw Error("failed to upgrade db");
+            }
+            await db.run("COMMIT;");
         }
 
         await db.exec("PRAGMA user_version = 1;");

@@ -427,10 +427,18 @@ export const activate = async (context: vscode.ExtensionContext) => {
             {
                 continue
             }
-			await db.run(
-                "UPDATE linenote_notes SET line_no = ? \
-                WHERE fspath = ? AND line_no = ?",
-                to, relativePath, from)
+            await db.run("BEGIN TRANSACTION;");
+            try {
+                await db.run(
+                    "UPDATE linenote_notes SET line_no = ? \
+                    WHERE fspath = ? AND line_no = ?",
+                    to, relativePath, from)
+            } catch (e) {
+                await db.run("ROLLBACK;");
+                vscode.window.showErrorMessage("failed to write db");
+                return;
+            }
+            await db.run("COMMIT;");
 		}
 		codelensProvider.refresh();
         treeViewProvider.refresh();
