@@ -27,12 +27,12 @@
 				}
 			]
 		},
-        "viewsWelcome": [
-            {
-              "view": "LinenoteExplorer",
-              "contents": "No notes found."
-            }
-        ],
+		"viewsWelcome": [
+			{
+				"view": "LinenoteExplorer",
+				"contents": "No notes found."
+			}
+		],
 		"commands": [
 			{
 				"command": "linenotecodelens.openNote",
@@ -136,7 +136,7 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm install && bash fetch_sqlite3_cross.sh && npm run compile; ",
 		"compile": "tsc -p ./",
 		"lint": "eslint . --ext .ts,.tsx",
 		"watch": "tsc -watch -p ./"
