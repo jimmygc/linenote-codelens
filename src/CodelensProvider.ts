@@ -48,6 +48,10 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 				{
 					continue;
 				}
+                if(!row.note_content.trim())
+                {
+                    continue;
+                }
 				reportedLines.push(row.line_no);
 				let from = editor.document.lineAt(row.line_no - 1).range.start;
 				let to = editor.document.lineAt(row.line_no - 1).range.end;
