@@ -6,13 +6,13 @@ This is inspired by **linenote**(https://github.com/tkrkt/linenote)
 
 ## Demo
 ### Tree view
-![Demo1](demo4.gif)
+![Demo1](https://raw.githubusercontent.com/jimmygc/linenote-codelens/master/demo4.gif)
 
 ### Create and delete note
-![Demo2](demo.gif)
+![Demo2](https://raw.githubusercontent.com/jimmygc/linenote-codelens/master/demo.gif)
 
 ### Move single note
-![Demo3](demo2.gif)
+![Demo3](https://raw.githubusercontent.com/jimmygc/linenote-codelens/master/demo2.gif)
 
 ### Move mutiple notes
-![Demo4](demo3.gif)
+![Demo4](https://raw.githubusercontent.com/jimmygc/linenote-codelens/master/demo3.gif)
