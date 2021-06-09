@@ -19,15 +19,15 @@ jobs:
         with:
           token: ${{secrets.github_token}}
 
-      - name: set yarn version
+      - name: set npm version
         run: git config --global user.email "github@github.com" &&
              git config --global user.name "Github actions" &&
-             git add . && git commit -m 'yarn publish' &&
-             yarn version --new-version 1.0.1-${BUILD_NUMBER} --no-git-tag-version
+             git add . && git commit -m 'npm publish' &&
+             npm version 1.0.1-${BUILD_NUMBER}
 
       - uses: lannonbr/vsce-action@master
         with:
-          args: "package --yarn"
+          args: "package --no-yarn"
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
