@@ -175,7 +175,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
 			console.debug(`auto deleted fullPath = ${fullPath}`);
 			db.run("DELETE FROM linenote_notes WHERE fspath = ?", row.fspath)
 			vscode.window.setStatusBarMessage(
-                `Auto removed notes of ${row.fspath}.`, 5000);
+                `Linenote: Auto removed notes of ${row.fspath}.`);
 			codelensProvider.refresh();
             treeViewProvider.refresh();
 		}
@@ -187,8 +187,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
             db.run(
                 "DELETE FROM linenote_notes WHERE fspath = ? AND line_no = ?",
                 row.fspath, row.line_no);
-            vscode.window.setStatusBarMessage(`Auto removed empty note of \
-                ${row.fspath}:${row.line_no}.`, 5000);
+            vscode.window.setStatusBarMessage(`Linenote: Auto removed empty note of \
+                ${row.fspath}:${row.line_no}.`);
             codelensProvider.refresh();
             treeViewProvider.refresh();
         }
@@ -371,7 +371,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 codelensProvider.refresh();
                 treeViewProvider.refresh();
                 vscode.window.setStatusBarMessage(
-                    `Successfully remove note from line ${from}.`, 5000);
+                    `Linenote: Successfully remove note from line ${from}.`);
             }
         }
     }),
@@ -481,8 +481,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
 		codelensProvider.refresh();
         treeViewProvider.refresh();
 		vscode.window.setStatusBarMessage(
-            `Successfully move all notes of ${fsPath} ${line_no>0?"down":"up"} \
-            ${Math.abs(line_no)} lines from line ${from}.`, 5000);
+            `Linenote: Successfully move all notes of ${fsPath} ${line_no>0?"down":"up"} \
+            ${Math.abs(line_no)} lines from line ${from}.`);
 	}),
 
     vscode.commands.registerCommand("linenotecodelens.moveSingleNote",
@@ -539,7 +539,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
 		codelensProvider.refresh();
         treeViewProvider.refresh();
 		vscode.window.setStatusBarMessage(
-            `Successfully move single note from line ${from} to line ${to}.`, 5000);
+            `Linenote: Successfully move single note from line ${from} to line ${to}.`);
     }),
     vscode.commands.registerCommand("linenotecodelens.gotoline",
             async (fspath:string, line: number) => {
