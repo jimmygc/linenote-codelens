@@ -11,3 +11,4 @@ src/**
 **/*.log
 fetch_sqlite3_cross.sh
 *.gif
+BUILD_NUMBER
