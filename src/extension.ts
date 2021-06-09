@@ -76,7 +76,6 @@ export const activate = async (context: vscode.ExtensionContext) => {
 	async readFile(uri: vscode.Uri): Promise<Uint8Array> {
 		let [fsPath, line_no] = this.uri2path_lineno(uri);
 		await this.init();
-        console.debug(`uri = ${uri}`);
 		console.debug(`readFile: ${fsPath}_${line_no}`);
 		const res = await this.db.get(
             "SELECT * FROM linenote_notes WHERE fspath = ? AND line_no = ?",
@@ -233,20 +232,33 @@ export const activate = async (context: vscode.ExtensionContext) => {
         // }
     }),
     vscode.window.onDidChangeTextEditorSelection (async e => {
-        if (treeview.visible) {
-            const editor = vscode.window.activeTextEditor;
-            if (editor)
+        const editor = vscode.window.activeTextEditor;
+        if (editor)
+        {
+            const fsPath = editor.document.uri.fsPath;
+            const line_no = e.selections[0].start.line + 1;
+            let uri :vscode.Uri;
+            try {
+                uri = linenoteUrlFromFsPath(fsPath, line_no);
+            } catch {
+                vscode.commands.executeCommand(
+                    'setContext', 'lineNote.showAddNoteCommand', false);
+                return;
+            }
+            vscode.commands.executeCommand(
+                'setContext', 'lineNote.showAddNoteCommand', true);
+            let content = await vscode.workspace.fs.readFile(uri);
+            if(content.toString()) {
+                vscode.commands.executeCommand(
+                    'setContext', 'lineNote.showModNoteCommand', true);
+            }
+            else
             {
-                const fsPath = editor.document.uri.fsPath;
-                const line_no = e.selections[0].start.line + 1;
+                vscode.commands.executeCommand(
+                    'setContext', 'lineNote.showModNoteCommand', false);
+            }
+            if (treeview.visible) {
                 let relativePath = linenoteFullPath2RelativePath(fsPath);
-                let uri :vscode.Uri;
-                try {
-                    uri = linenoteUrlFromFsPath(fsPath, line_no);
-                } catch {
-                    return;
-                }
-                let content = await vscode.workspace.fs.readFile(uri);
                 // console.debug("on select: relativePath=" + relativePath);
                 if(content.toString())
                 {
@@ -258,6 +270,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 }
             }
         }
+
     }),
     vscode.workspace.onDidChangeTextDocument(event => {}),
     vscode.workspace.onDidCloseTextDocument(async event => {}),
@@ -300,7 +313,6 @@ export const activate = async (context: vscode.ExtensionContext) => {
                         "Linenote: Only files in the first working folder is supported");
                     return;
                 }
-                console.info(`uri = ${uri}`);
                 let doc :vscode.TextDocument;
                 doc = await vscode.workspace.openTextDocument(uri);
                 await vscode.window.showTextDocument(doc,

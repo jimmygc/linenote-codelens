@@ -103,11 +103,13 @@
 			"editor/context": [
 				{
 					"command": "linenotecodelens.openNote",
-					"group": "linenote@1"
+					"group": "linenote@1",
+                    "when": "lineNote.showAddNoteCommand"
 				},
 				{
 					"submenu": "linenote.editor.context",
-					"group": "linenote@2"
+					"group": "linenote@2",
+                    "when": "lineNote.showModNoteCommand"
 				}
 			],
 			"linenote.editor.context": [
