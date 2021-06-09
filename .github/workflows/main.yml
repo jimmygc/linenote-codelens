@@ -21,7 +21,9 @@ jobs:
           token: ${{secrets.github_token}}  
       
       - name: set npm version
-        run: "git add . && git commit -m 'npm publish' && npm version 1.0.1-${BUILD_NUMBER}"
+        run: git config --global user.email "github@github.com && 
+             git config --global user.name "Github actions" &&
+             git add . && git commit -m 'npm publish' && npm version 1.0.1-${BUILD_NUMBER}
 
       - uses: lannonbr/vsce-action@master
         with:
