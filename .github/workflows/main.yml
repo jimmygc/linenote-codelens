@@ -12,6 +12,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+
       - name: Generate build number
         uses: einaregilsson/build-number@v3
         with:
