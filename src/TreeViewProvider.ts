@@ -61,7 +61,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
 	}
 
     public refresh(): void {
-        this._onDidChangeTreeData.fire();
+        this._onDidChangeTreeData.fire(null);
     }
 
     async getTreeItem(element: Entry): Promise<vscode.TreeItem> {

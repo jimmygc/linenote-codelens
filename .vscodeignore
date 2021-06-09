@@ -9,3 +9,5 @@ src/**
 **/*.map
 **/*.ts
 **/*.log
+fetch_sqlite3_cross.sh
+
