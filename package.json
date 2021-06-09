@@ -3,7 +3,7 @@
 	"repository": "https://github.com/jimmygc/linenote-codelens.git",
 	"displayName": "Note Line in Codelens",
 	"description": "note line in codelens",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"publisher": "jimmygc",
 	"engines": {
 		"vscode": "^1.26.0"
@@ -104,12 +104,12 @@
 				{
 					"command": "linenotecodelens.openNote",
 					"group": "linenote@1",
-                    "when": "lineNote.showAddNoteCommand"
+					"when": "lineNote.showAddNoteCommand"
 				},
 				{
 					"submenu": "linenote.editor.context",
 					"group": "linenote@2",
-                    "when": "lineNote.showModNoteCommand"
+					"when": "lineNote.showModNoteCommand"
 				}
 			],
 			"linenote.editor.context": [
