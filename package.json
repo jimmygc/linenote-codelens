@@ -3,7 +3,7 @@
 	"repository": "https://github.com/jimmygc/linenote-codelens.git",
 	"displayName": "Note Line in Codelens",
 	"description": "note line in codelens",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"publisher": "jimmygc",
 	"engines": {
 		"vscode": "^1.26.0"
@@ -138,7 +138,7 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm install && bash fetch_sqlite3_cross.sh && npm run compile; ",
+		"vscode:prepublish": "yarn; yarn run compile;yarn --product=true;bash fetch_sqlite3_cross.sh",
 		"compile": "tsc -p ./",
 		"lint": "eslint . --ext .ts,.tsx",
 		"watch": "tsc -watch -p ./"
