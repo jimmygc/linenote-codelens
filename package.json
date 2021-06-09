@@ -138,7 +138,7 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "yarn; yarn run compile;yarn --product=true;bash fetch_sqlite3_cross.sh",
+		"vscode:prepublish": "yarn;yarn run compile;bash fetch_sqlite3_cross.sh",
 		"compile": "tsc -p ./",
 		"lint": "eslint . --ext .ts,.tsx",
 		"watch": "tsc -watch -p ./"
@@ -156,6 +156,7 @@
 	},
 	"dependencies": {
 		"sqlite": "^4.0.23",
-		"sqlite3": "^5.0.2"
+		"sqlite3": "^5.0.2",
+        "emoji-regex": "^8.0.0"
 	}
 }
