@@ -60,6 +60,16 @@
 				"icon": "$(refresh)"
 			},
 			{
+				"command": "linenotecodelens.treeview_set_filter",
+				"title": "Line Note: Set treeview filter",
+				"icon": "$(filter)"
+			},
+			{
+				"command": "linenotecodelens.treeview_reset_filter",
+				"title": "Line Note: Reset treeview filter",
+				"icon": "$(clear-all)"
+			},
+			{
 				"command": "linenotecodelens.starNote",
 				"title": "Line Note: Star note",
 				"icon": "$(star-full)"
@@ -95,7 +105,17 @@
 				{
 					"command": "linenotecodelens.treeview_refresh",
 					"when": "view == LinenoteExplorer",
+					"group": "navigation@5"
+				},
+				{
+					"command": "linenotecodelens.treeview_set_filter",
+					"when": "view == LinenoteExplorer && !lineNote.showTreeViewResetFilter",
 					"group": "navigation@3"
+				},
+				{
+					"command": "linenotecodelens.treeview_reset_filter",
+					"when": "view == LinenoteExplorer && lineNote.showTreeViewResetFilter",
+					"group": "navigation@4"
 				},
 				{
 					"command": "linenotecodelens.starNoteTreeViewSelect",

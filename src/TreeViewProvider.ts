@@ -61,12 +61,21 @@ export class LineNoteStarEntry extends vscode.TreeItem {
 
 export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
 	private db :sqlite.Database;
+    private filter : RegExp;
 	private _onDidChangeTreeData: vscode.EventEmitter<any> = new vscode.EventEmitter<any>();
 	readonly onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
 
 	private async init(): Promise<void> {
 		this.db = await getDB();
 	}
+
+    public setFilter(regex: string): void{
+        this.filter = new RegExp(regex);
+    }
+
+    public resetFilter(): void{
+        this.filter = null;
+    }
 
     public refresh(): void {
         this._onDidChangeTreeData.fire(null);
@@ -103,6 +112,10 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
                 "SELECT * FROM linenote_notes where fspath = ? AND line_no = ?",
                 element.fspath, element.line_no);
             if (row && row.note_content.trim()) {
+                if(this.filter && !this.filter.exec(row.note_content.trim()))
+                {
+                    return null;
+                }
                 if (row.star == 1)
                 {
                     treeItem = new LineNoteStarEntry(

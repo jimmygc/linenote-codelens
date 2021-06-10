@@ -778,6 +778,22 @@ export const activate = async (context: vscode.ExtensionContext) => {
     async () => {
         vscode.commands.executeCommand("linenotecodelens.starNoteTreeViewSelect", true);
     }),
+    vscode.commands.registerCommand("linenotecodelens.treeview_reset_filter",
+    async () => {
+        treeViewProvider.resetFilter();
+        vscode.commands.executeCommand(
+            'setContext', 'lineNote.showTreeViewResetFilter', false);
+        treeViewProvider.refresh();
+    }),
+    vscode.commands.registerCommand("linenotecodelens.treeview_set_filter",
+    async () => {
+        let str = await vscode.window.showInputBox(
+            {placeHolder: "Input filter string." })
+        treeViewProvider.setFilter(str);
+        vscode.commands.executeCommand(
+            'setContext', 'lineNote.showTreeViewResetFilter', true);
+        treeViewProvider.refresh();
+    }),
   );
 };
 
