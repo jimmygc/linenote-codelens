@@ -61,7 +61,7 @@ export class LineNoteStarEntry extends vscode.TreeItem {
 
 export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
 	private db :sqlite.Database;
-    private filter : RegExp;
+    private filter : string;
 	private _onDidChangeTreeData: vscode.EventEmitter<any> = new vscode.EventEmitter<any>();
 	readonly onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
 
@@ -70,7 +70,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
 	}
 
     public setFilter(regex: string): void{
-        this.filter = new RegExp(regex);
+        this.filter = regex;
     }
 
     public resetFilter(): void{
@@ -112,14 +112,25 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
                 "SELECT * FROM linenote_notes where fspath = ? AND line_no = ?",
                 element.fspath, element.line_no);
             if (row && row.note_content.trim()) {
-                if(this.filter && !this.filter.exec(row.note_content.trim()))
+                let txt = row.note_content.trim();
+                let label:vscode.TreeItemLabel = {
+                    label: `${txt} (L${element.line_no})`
+                }
+                if(this.filter && this.filter.trim().length)
                 {
-                    return null;
+                    let reg = RegExp(this.filter);
+                    let match = reg.exec(txt);
+                    if(!match)
+                    {
+                        return null;
+                    }
+                    label.highlights = [[match.index, match.index + match.toString().length]];
                 }
                 if (row.star == 1)
                 {
+
                     treeItem = new LineNoteStarEntry(
-                        `${row.note_content.trim()} (L${element.line_no})`,
+                        label,
                         vscode.TreeItemCollapsibleState.None);
                     treeItem.tooltip = `${element.fspath}:${element.line_no}\n` +
                         `Star folder:${row.star_dir}`;
@@ -127,12 +138,12 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
                 else
                 {
                     treeItem = new LineNoteEntry(
-                        `${row.note_content.trim()} (L${element.line_no})`,
+                        label,
                         vscode.TreeItemCollapsibleState.None);
                     treeItem.tooltip = `${element.fspath}:${element.line_no}`;
                 }
                 treeItem.command = {
-                    title: `${row.note_content.trim()} (L${element.line_no})`,
+                    title: `${txt} (L${element.line_no})`,
                     command: "linenotecodelens.gotoline",
                     arguments: [full_path, element.line_no]
                 };
