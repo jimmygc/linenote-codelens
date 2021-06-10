@@ -264,10 +264,12 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 if(content.toString())
                 {
                     // console.debug("on select: reveal relativePath=" + relativePath);
-                    treeview.reveal(
-                        {fspath: relativePath,
-                         type:LineNoteEntryType.Note, line_no:line_no},
-                        {focus: false, select: true, expand: false})
+                    try {
+                        treeview.reveal(
+                            {fspath: relativePath,
+                            type:LineNoteEntryType.Note, line_no:line_no},
+                            {focus: false, select: true, expand: false});
+                    } catch(e) {}
                 }
             }
         }
@@ -797,6 +799,46 @@ export const activate = async (context: vscode.ExtensionContext) => {
         vscode.commands.executeCommand(
             'setContext', 'lineNote.showTreeViewResetFilter', true);
         treeViewProvider.refresh();
+        if (treeview.visible) {
+            let db = await getDB();
+            let results = await db.all(
+                "SELECT DISTINCT star_dir from linenote_notes;"
+            );
+            if(results)
+            {
+                for (let row of results)
+                {
+                    if(row.star_dir)
+                    {
+                        try{
+                            treeview.reveal(
+                                {fspath: row.star_dir,
+                                type:LineNoteEntryType.StarFolder, line_no:0},
+                                {focus: false, select: false, expand: true})
+                        } catch(e) {}
+                    }
+                }
+            }
+            results = await db.all(
+                "SELECT DISTINCT fspath from linenote_notes;"
+            );
+            if(results)
+            {
+                for (let row of results)
+                {
+                    if(row.fspath)
+                    {
+                        try{
+                            treeview.reveal(
+                                {fspath: row.fspath,
+                                type:LineNoteEntryType.File, line_no:0},
+                                {focus: false, select: false, expand: true})
+                        } catch(e) {}
+                    }
+                }
+
+            }
+        }
     }),
   );
 };
