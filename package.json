@@ -62,20 +62,45 @@
 			{
 				"command": "linenotecodelens.starNote",
 				"title": "Line Note: Star note",
-				"icon": "$(star)"
+				"icon": "$(star-full)"
+			},
+			{
+				"command": "linenotecodelens.unstarNote",
+				"title": "Line Note: Unstar note",
+				"icon": "$(star-empty)"
 			},
             {
                 "command": "linenotecodelens.renameStarFolder",
 				"title": "Line Note: Rename star folder",
 				"icon": "$(edit)"
-            }
+            },
+			{
+				"command": "linenotecodelens.starNoteTreeViewSelect",
+				"title": "Line Note: Star note via tree view selection",
+				"icon": "$(star-full)"
+			},
+			{
+				"command": "linenotecodelens.unstarNoteTreeViewSelect",
+				"title": "Line Note: Unstar note via tree view selection",
+				"icon": "$(star-empty)"
+			}
 		],
 		"menus": {
 			"view/title": [
 				{
 					"command": "linenotecodelens.treeview_refresh",
 					"when": "view == LinenoteExplorer",
+					"group": "navigation@3"
+				},
+				{
+					"command": "linenotecodelens.starNoteTreeViewSelect",
+					"when": "view == LinenoteExplorer",
 					"group": "navigation@1"
+				},
+				{
+					"command": "linenotecodelens.unstarNoteTreeViewSelect",
+					"when": "view == LinenoteExplorer",
+					"group": "navigation@2"
 				}
 			],
 			"view/item/context": [
@@ -86,27 +111,32 @@
                 },
 				{
 					"command": "linenotecodelens.removeNote",
-					"when": "view == LinenoteExplorer && viewItem == note",
+					"when": "view == LinenoteExplorer && viewItem =~ /^.*note/)",
 					"group": "inline@5"
 				},
 				{
 					"command": "linenotecodelens.moveNoteAndSubsequential",
-					"when": "view == LinenoteExplorer && viewItem == note",
+					"when": "view == LinenoteExplorer && viewItem =~ /^.*note/",
 					"group": "inline@4"
 				},
 				{
 					"command": "linenotecodelens.moveSingleNote",
-					"when": "view == LinenoteExplorer && viewItem == note",
+					"when": "view == LinenoteExplorer && viewItem =~ /^.*note/",
 					"group": "inline@3"
 				},
 				{
 					"command": "linenotecodelens.openNote",
-					"when": "view == LinenoteExplorer && viewItem == note",
+					"when": "view == LinenoteExplorer && viewItem =~ /^.*note/",
 					"group": "inline@2"
 				},
 				{
 					"command": "linenotecodelens.starNote",
 					"when": "view == LinenoteExplorer && viewItem == note",
+					"group": "inline@1"
+				},
+				{
+					"command": "linenotecodelens.unstarNote",
+					"when": "view == LinenoteExplorer && viewItem == star_note",
 					"group": "inline@1"
 				}
 			],

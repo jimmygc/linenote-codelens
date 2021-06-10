@@ -39,8 +39,9 @@ export const activate = async (context: vscode.ExtensionContext) => {
   const treeViewProvider = new NoteTreeProvider();
   let treeview = vscode.window.createTreeView(
       'LinenoteExplorer',
-      { treeDataProvider: treeViewProvider, showCollapseAll: true});
-
+      { treeDataProvider: treeViewProvider,
+        showCollapseAll: true,
+        canSelectMany: true});
   class linenoteFS implements vscode.FileSystemProvider {
 
 	private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
@@ -638,6 +639,10 @@ export const activate = async (context: vscode.ExtensionContext) => {
             }
         }
     }),
+    vscode.commands.registerCommand("linenotecodelens.unstarNote",
+            async (resource?: Entry) => {
+        vscode.commands.executeCommand("linenotecodelens.starNote", resource);
+    }),
     vscode.commands.registerCommand("linenotecodelens.renameStarFolder",
     async (resource?: Entry) => {
         if(resource && resource.type == LineNoteEntryType.StarFolder)
@@ -675,7 +680,117 @@ export const activate = async (context: vscode.ExtensionContext) => {
             await db.run("COMMIT;");
             treeViewProvider.refresh();
         }
-    })
+    }),
+    vscode.commands.registerCommand("linenotecodelens.unstarNoteTreeViewSelect",
+    async () => {
+        let selected_notes : Entry[] = [];
+        for(let element of treeview.selection)
+        {
+            if(element && (element.type == LineNoteEntryType.Note ||
+                element.type == LineNoteEntryType.StarNote))
+            {
+                selected_notes.push(element);
+            }
+        }
+
+        if(!selected_notes.length)
+        {
+            return;
+        }
+        let db = await getDB();
+        await db.run("BEGIN TRANSACTION;");
+        try{
+            for (let note of selected_notes)
+            {
+                await db.run(
+                    "UPDATE linenote_notes SET star = 0, star_dir = '' \
+                    WHERE fspath = ? AND line_no = ?",
+                    note.fspath,
+                    note.line_no
+                );
+            }
+        } catch (e) {
+            await db.run("ROLLBACK;");
+            vscode.window.showErrorMessage("failed to write db");
+            return;
+        }
+        await db.run("COMMIT;");
+        treeViewProvider.refresh();
+    }),
+    vscode.commands.registerCommand("linenotecodelens.starNoteTreeViewSelect",
+    async () => {
+        let selected_notes : Entry[] = [];
+        for(let element of treeview.selection)
+        {
+            if(element && (element.type == LineNoteEntryType.Note ||
+                element.type == LineNoteEntryType.StarNote))
+            {
+                selected_notes.push(element);
+            }
+        }
+
+        if(!selected_notes.length)
+        {
+            return;
+        }
+
+        let db = await getDB();
+        let items :string[] = [];
+        let results = await db.all(
+            "SELECT DISTINCT star_dir from linenote_notes;"
+        );
+        if(results)
+        {
+            for (let row of results)
+            {
+                if(row.star_dir)
+                {
+                    items.push(row.star_dir);
+                }
+            }
+
+        }
+        let star_dir :string;
+        if(items.length)
+        {
+            let qp_items = []
+            qp_items.push("Linenote: Create new star dir.");
+            qp_items = qp_items.concat(items);
+            star_dir = await vscode.window.showQuickPick(
+                qp_items,
+                {placeHolder: "Choose star dir name for the note.", });
+        }
+        if(!star_dir || star_dir == "Linenote: Create new star dir.")
+        {
+            star_dir = await vscode.window.showInputBox(
+                {placeHolder: "Input star dir name for the note." })
+        }
+        if(!star_dir || star_dir == "Linenote: Create new star dir.")
+        {
+            return;
+        }
+        // update all notes
+        await db.run("BEGIN TRANSACTION;");
+        try{
+            for (let note of selected_notes)
+            {
+                await db.run(
+                    "UPDATE linenote_notes SET star = 1, star_dir = ? \
+                    WHERE fspath = ? AND line_no = ?",
+                    star_dir,
+                    note.fspath,
+                    note.line_no
+                );
+            }
+        } catch (e) {
+            await db.run("ROLLBACK;");
+            vscode.window.showErrorMessage("failed to write db");
+            return;
+        }
+        await db.run("COMMIT;");
+        treeViewProvider.refresh();
+    }),
+
   );
 };
 

@@ -56,7 +56,7 @@ export class LineNoteStarEntry extends vscode.TreeItem {
         light: path.join(__filename, '..', '..', 'resources', 'bookmark_star.png'),
         dark: path.join(__filename, '..', '..', 'resources', 'bookmark_star.png'),
     };
-    contextValue = "note";
+    contextValue = "star_note";
 }
 
 export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
