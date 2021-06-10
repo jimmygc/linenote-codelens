@@ -788,7 +788,11 @@ export const activate = async (context: vscode.ExtensionContext) => {
     vscode.commands.registerCommand("linenotecodelens.treeview_set_filter",
     async () => {
         let str = await vscode.window.showInputBox(
-            {placeHolder: "Input filter string." })
+            {placeHolder: "Linenote: Input treeview filter string." })
+        if(!str.trim().length)
+        {
+            return;
+        }
         treeViewProvider.setFilter(str);
         vscode.commands.executeCommand(
             'setContext', 'lineNote.showTreeViewResetFilter', true);
