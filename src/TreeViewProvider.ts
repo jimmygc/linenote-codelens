@@ -107,6 +107,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
                         `${row.note_content.trim()} (L${element.line_no})`,
                         vscode.TreeItemCollapsibleState.None);
                 }
+                treeItem.tooltip = `${element.fspath}:${element.line_no}`;
                 treeItem.command = {
                     title: `${row.note_content.trim()} (L${element.line_no})`,
                     command: "linenotecodelens.gotoline",
