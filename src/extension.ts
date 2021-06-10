@@ -608,12 +608,14 @@ export const activate = async (context: vscode.ExtensionContext) => {
 
                     }
                     let star_dir :string;
-                    if(items)
+                    if(items.length)
                     {
-                        items.push("Linenote: Create new star dir.");
+                        let qp_items = []
+                        qp_items.push("Linenote: Create new star dir.");
+                        qp_items = qp_items.concat(items);
                         star_dir = await vscode.window.showQuickPick(
-                            items,
-                            {placeHolder: "Choose star dir name for the note." });
+                            qp_items,
+                            {placeHolder: "Choose star dir name for the note.", });
                     }
                     if(!star_dir || star_dir == "Linenote: Create new star dir.")
                     {

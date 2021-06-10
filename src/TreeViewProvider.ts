@@ -35,6 +35,13 @@ class LineNoteFile extends vscode.TreeItem {
     contextValue = "file";
 }
 
+class LineNoteStarFolder extends vscode.TreeItem {
+    iconPath = {
+        light: path.join(__filename, '..', '..', 'resources', 'star_folder.png'),
+        dark: path.join(__filename, '..', '..', 'resources', 'star_folder.png'),
+    };
+}
+
 export class LineNoteEntry extends vscode.TreeItem {
     iconPath = {
         light: path.join(__filename, '..', '..', 'resources', 'bookmark.png'),
@@ -79,7 +86,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         }
         else if (element.type == LineNoteEntryType.StarFolder)
         {
-            treeItem = new LineNoteFile(
+            treeItem = new LineNoteStarFolder(
                 `${element.fspath.trim()}`,
                 vscode.TreeItemCollapsibleState.Expanded);
         }
