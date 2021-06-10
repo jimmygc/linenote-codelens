@@ -638,6 +638,44 @@ export const activate = async (context: vscode.ExtensionContext) => {
             }
         }
     }),
+    vscode.commands.registerCommand("linenotecodelens.renameStarFolder",
+    async (resource?: Entry) => {
+        if(resource && resource.type == LineNoteEntryType.StarFolder)
+        {
+            let star_dir = await vscode.window.showInputBox(
+                {placeHolder: "Input new star dir name." });
+            if(!star_dir || star_dir == resource.fspath)
+            {
+                return;
+            }
+            let db = await getDB();
+
+            let results = await db.all(
+                "SELECT DISTINCT star_dir from linenote_notes WHERE star_dir = ?",
+                star_dir
+            );
+
+            if(results.length)
+            {
+                vscode.window.showErrorMessage("Star folder name confiict.");
+                return;
+            }
+
+            await db.run("BEGIN TRANSACTION;");
+            try {
+                await db.run(
+                    "UPDATE linenote_notes SET star_dir = ? \
+                    WHERE star_dir = ?",
+                    star_dir, resource.fspath);
+            } catch (e) {
+                await db.run("ROLLBACK;");
+                vscode.window.showErrorMessage("failed to write db");
+                return;
+            }
+            await db.run("COMMIT;");
+            treeViewProvider.refresh();
+        }
+    })
   );
 };
 

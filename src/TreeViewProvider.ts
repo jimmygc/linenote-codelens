@@ -40,6 +40,7 @@ class LineNoteStarFolder extends vscode.TreeItem {
         light: path.join(__filename, '..', '..', 'resources', 'star_folder.png'),
         dark: path.join(__filename, '..', '..', 'resources', 'star_folder.png'),
     };
+    contextValue = "star_folder";
 }
 
 export class LineNoteEntry extends vscode.TreeItem {
@@ -77,7 +78,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         {
             return null;
         }
-        let treeItem:vscode.TreeItem;
+        let treeItem:vscode.TreeItem = null;
         if(element.type == LineNoteEntryType.File)
         {
             treeItem = new LineNoteFile(
@@ -101,20 +102,22 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
             let row = await this.db.get(
                 "SELECT * FROM linenote_notes where fspath = ? AND line_no = ?",
                 element.fspath, element.line_no);
-            if (row) {
+            if (row && row.note_content.trim()) {
                 if (row.star == 1)
                 {
                     treeItem = new LineNoteStarEntry(
                         `${row.note_content.trim()} (L${element.line_no})`,
                         vscode.TreeItemCollapsibleState.None);
+                    treeItem.tooltip = `${element.fspath}:${element.line_no}\n' +
+                        'Star folder:${row.star_dir}`;
                 }
                 else
                 {
                     treeItem = new LineNoteEntry(
                         `${row.note_content.trim()} (L${element.line_no})`,
                         vscode.TreeItemCollapsibleState.None);
+                    treeItem.tooltip = `${element.fspath}:${element.line_no}`;
                 }
-                treeItem.tooltip = `${element.fspath}:${element.line_no}`;
                 treeItem.command = {
                     title: `${row.note_content.trim()} (L${element.line_no})`,
                     command: "linenotecodelens.gotoline",

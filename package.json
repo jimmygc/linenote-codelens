@@ -63,7 +63,12 @@
 				"command": "linenotecodelens.starNote",
 				"title": "Line Note: Star note",
 				"icon": "$(star)"
-			}
+			},
+            {
+                "command": "linenotecodelens.renameStarFolder",
+				"title": "Line Note: Rename star folder",
+				"icon": "$(edit)"
+            }
 		],
 		"menus": {
 			"view/title": [
@@ -74,6 +79,11 @@
 				}
 			],
 			"view/item/context": [
+                {
+					"command": "linenotecodelens.renameStarFolder",
+					"when": "view == LinenoteExplorer && viewItem == star_folder",
+					"group": "inline@1"
+                },
 				{
 					"command": "linenotecodelens.removeNote",
 					"when": "view == LinenoteExplorer && viewItem == note",
