@@ -20,7 +20,8 @@ export const getDB = async () :Promise<sqlite.Database<sqlite3.Database, sqlite3
     }
 	if(rootPath && (!db || currentProjectRoot != rootPath))
 	{
-        initing = true
+        initing = true;
+        const target_version = 2;
 		if(db)
 		{
 			await db.close();
@@ -52,15 +53,21 @@ export const getDB = async () :Promise<sqlite.Database<sqlite3.Database, sqlite3
                 fspath TEXT NOT NULL,  \
                 line_no INTEGER NOT NULL, \
                 note_content TEXT NOT NULL, \
-                star INTEGER \
+                star INTEGER, \
+                star_dir TEXT \
                 );");
-            db_version = 1;
+            db_version = target_version;
+        }
+
+        if(db_version < target_version)
+        {
+            console.info(`backup db version ${db_version}`);
+            fs.copyFileSync(db_path, db_path+".bak");
         }
 
         if(db_version == 0)
         {
             console.info(`migrate from version ${db_version}`);
-            fs.copyFileSync(db_path, db_path+".bak");
             await db.run("BEGIN TRANSACTION;");
             try {
                 await db.exec("DROP TABLE IF EXISTS linenote_notes_migrate;");
@@ -103,7 +110,7 @@ export const getDB = async () :Promise<sqlite.Database<sqlite3.Database, sqlite3
             db_version = 2;
         }
 
-        await db.exec("PRAGMA user_version = 2;");
+        await db.exec(`PRAGMA user_version = ${target_version};`);
 		currentProjectRoot = rootPath;
         initing = false;
 	}
