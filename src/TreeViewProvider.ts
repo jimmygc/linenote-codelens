@@ -118,7 +118,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
                 }
                 if(this.filter && this.filter.trim().length)
                 {
-                    let reg = RegExp(this.filter);
+                    let reg = RegExp(this.filter, "gi");
                     let match = reg.exec(txt);
                     if(!match)
                     {
