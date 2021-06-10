@@ -171,9 +171,9 @@ export const activate = async (context: vscode.ExtensionContext) => {
 	let results = await db.all("SELECT DISTINCT fspath FROM linenote_notes");
 	for(let row of results) {
 		let fullPath = linenoteRelativePath2FullPath(row.fspath);
-        console.debug("autodelete path = " + fullPath);
+        // console.debug("autodelete path = " + fullPath);
 		if(!fs.existsSync(fullPath)) {
-			console.debug(`auto deleted fullPath = ${fullPath}`);
+			// console.debug(`auto deleted fullPath = ${fullPath}`);
 			db.run("DELETE FROM linenote_notes WHERE fspath = ?", row.fspath)
 			vscode.window.setStatusBarMessage(
                 `Linenote: Auto removed notes of ${row.fspath}.`);
