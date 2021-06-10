@@ -69,6 +69,11 @@
 				"title": "Line Note: Unstar note",
 				"icon": "$(star-empty)"
 			},
+			{
+				"command": "linenotecodelens.moveStarNote",
+				"title": "Line Note: Move star note",
+				"icon": "$(file-symlink-directory)"
+			},
             {
                 "command": "linenotecodelens.renameStarFolder",
 				"title": "Line Note: Rename star folder",
@@ -112,22 +117,22 @@
 				{
 					"command": "linenotecodelens.removeNote",
 					"when": "view == LinenoteExplorer && viewItem =~ /^.*note/)",
-					"group": "inline@5"
+					"group": "inline@6"
 				},
 				{
 					"command": "linenotecodelens.moveNoteAndSubsequential",
 					"when": "view == LinenoteExplorer && viewItem =~ /^.*note/",
-					"group": "inline@4"
+					"group": "inline@5"
 				},
 				{
 					"command": "linenotecodelens.moveSingleNote",
 					"when": "view == LinenoteExplorer && viewItem =~ /^.*note/",
-					"group": "inline@3"
+					"group": "inline@4"
 				},
 				{
 					"command": "linenotecodelens.openNote",
 					"when": "view == LinenoteExplorer && viewItem =~ /^.*note/",
-					"group": "inline@2"
+					"group": "inline@3"
 				},
 				{
 					"command": "linenotecodelens.starNote",
@@ -138,6 +143,11 @@
 					"command": "linenotecodelens.unstarNote",
 					"when": "view == LinenoteExplorer && viewItem == star_note",
 					"group": "inline@1"
+				},
+				{
+					"command": "linenotecodelens.moveStarNote",
+					"when": "view == LinenoteExplorer && viewItem == star_note",
+					"group": "inline@2"
 				}
 			],
 			"editor/context": [
