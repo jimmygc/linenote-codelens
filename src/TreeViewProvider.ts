@@ -9,7 +9,7 @@ export enum LineNoteEntryType {
     File = 1,
     Note = 2,
     StarDir = 3,
-    StarFile = 4,
+    StarFolder = 4,
     StarNote = 5
 }
 
@@ -77,7 +77,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
                 `${element.fspath.trim()}`,
                 vscode.TreeItemCollapsibleState.Collapsed);
         }
-        else if (element.type == LineNoteEntryType.StarFile)
+        else if (element.type == LineNoteEntryType.StarFolder)
         {
             treeItem = new LineNoteFile(
                 `${element.fspath.trim()}`,
@@ -135,11 +135,11 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         {
             return {
                 fspath: element.fspath,
-                type:LineNoteEntryType.StarFile,
+                type:LineNoteEntryType.StarFolder,
                 line_no:0
             };
         }
-        else if (element.type == LineNoteEntryType.StarFile)
+        else if (element.type == LineNoteEntryType.StarFolder)
         {
             return {
                 fspath: null,
@@ -189,17 +189,20 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         {
             case LineNoteEntryType.StarDir:
                 results = await this.db.all(
-                    "SELECT DISTINCT fspath FROM linenote_notes where star = 1");
+                    "SELECT DISTINCT star_dir FROM linenote_notes where star = 1");
                 if (results)
                 {
                     for (let row of results)
                     {
-                        let e :Entry = {
-                            fspath: row.fspath,
-                            type:LineNoteEntryType.StarFile,
-                            line_no: 0
+                        if(row.star_dir)
+                        {
+                            let e :Entry = {
+                                fspath: row.star_dir,
+                                type:LineNoteEntryType.StarFolder,
+                                line_no: 0
+                            }
+                            children.push(e)
                         }
-                        children.push(e)
                     }
                 }
                 return children;
@@ -220,9 +223,9 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
                     }
                 }
                 return children
-            case LineNoteEntryType.StarFile:
+            case LineNoteEntryType.StarFolder:
                 results = await this.db.all(
-                    "SELECT * FROM linenote_notes WHERE star = 1 AND fspath = ?",
+                    "SELECT * FROM linenote_notes WHERE star = 1 AND star_dir = ?",
                     element.fspath);
                 if (results)
                 {

@@ -584,7 +584,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 if(result.star == 1)
                 {
                     await db.run(
-                        "UPDATE linenote_notes SET star = 0 \
+                        "UPDATE linenote_notes SET star = 0, star_dir = '' \
                         WHERE fspath = ? AND line_no = ?",
                         resource.fspath,
                         resource.line_no
@@ -592,9 +592,42 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 }
                 else
                 {
+                    let items :string[] = [];
+                    let results = await db.all(
+                        "SELECT DISTINCT star_dir from linenote_notes;"
+                    );
+                    if(results)
+                    {
+                        for (let row of results)
+                        {
+                            if(row.star_dir)
+                            {
+                                items.push(row.star_dir);
+                            }
+                        }
+
+                    }
+                    let star_dir :string;
+                    if(items)
+                    {
+                        items.push("Linenote: Create new star dir.");
+                        star_dir = await vscode.window.showQuickPick(
+                            items,
+                            {placeHolder: "Choose star dir name for the note." });
+                    }
+                    if(!star_dir || star_dir == "Linenote: Create new star dir.")
+                    {
+                        star_dir = await vscode.window.showInputBox(
+                            {placeHolder: "Input star dir name for the note." })
+                    }
+                    if(!star_dir || star_dir == "Linenote: Create new star dir.")
+                    {
+                        return;
+                    }
                     await db.run(
-                        "UPDATE linenote_notes SET star = 1 \
+                        "UPDATE linenote_notes SET star = 1, star_dir = ? \
                         WHERE fspath = ? AND line_no = ?",
+                        star_dir,
                         resource.fspath,
                         resource.line_no
                     )

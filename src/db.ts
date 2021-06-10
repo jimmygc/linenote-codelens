@@ -9,6 +9,10 @@ let db :sqlite.Database;
 let initing = false;
 
 export const getDB = async () :Promise<sqlite.Database<sqlite3.Database, sqlite3.Statement>> => {
+    if(!vscode.workspace.workspaceFolders)
+    {
+        return null;
+    }
     let rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
     if(initing)
     {
@@ -55,7 +59,7 @@ export const getDB = async () :Promise<sqlite.Database<sqlite3.Database, sqlite3
 
         if(db_version == 0)
         {
-            console.info("migrate from version 0");
+            console.info(`migrate from version ${db_version}`);
             fs.copyFileSync(db_path, db_path+".bak");
             await db.run("BEGIN TRANSACTION;");
             try {
@@ -81,9 +85,25 @@ export const getDB = async () :Promise<sqlite.Database<sqlite3.Database, sqlite3
                 throw Error("failed to upgrade db");
             }
             await db.run("COMMIT;");
+            db_version = 1;
         }
 
-        await db.exec("PRAGMA user_version = 1;");
+        if(db_version == 1)
+        {
+            console.info(`migrate from version ${db_version}`);
+            await db.run("BEGIN TRANSACTION;");
+            try {
+                await db.exec(
+                    "ALTER TABLE linenote_notes ADD COLUMN star_dir TEXT;");
+            } catch(e) {
+                db.run("ROLLBACK;");
+                throw Error("failed to upgrade db");
+            }
+            await db.run("COMMIT;");
+            db_version = 2;
+        }
+
+        await db.exec("PRAGMA user_version = 2;");
 		currentProjectRoot = rootPath;
         initing = false;
 	}
