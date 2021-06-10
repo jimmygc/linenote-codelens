@@ -561,7 +561,9 @@ export const activate = async (context: vscode.ExtensionContext) => {
             return
         }
         let range = editor.document.lineAt(line-1).range;
-        editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+        try {
+            editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+        } catch(e) {}
     }),
     vscode.commands.registerCommand("linenotecodelens.treeview_refresh",
             async () => {
