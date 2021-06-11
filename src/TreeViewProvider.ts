@@ -98,7 +98,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<Entry> {
         {
             treeItem = new LineNoteStarFolder(
                 `${element.fspath.trim()}`,
-                vscode.TreeItemCollapsibleState.Expanded);
+                vscode.TreeItemCollapsibleState.Collapsed);
         }
         else if (element.type == LineNoteEntryType.StarDir) {
             treeItem = new LineNoteStarDir(

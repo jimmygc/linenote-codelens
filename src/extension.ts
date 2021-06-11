@@ -546,7 +546,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
     }),
     vscode.commands.registerCommand("linenotecodelens.gotoline",
             async (fspath:string, line: number) => {
-        console.debug("goto line fspath=" + fspath);
+        // console.debug("goto line fspath=" + fspath);
         if(!fs.statSync(fspath))
         {
             return;
